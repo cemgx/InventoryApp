@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryApp.Migrations
 {
     [DbContext(typeof(InventoryAppDbContext))]
-    [Migration("20241112073007_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20241112121301_pleaseMig")]
+    partial class pleaseMig
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -52,16 +52,16 @@ namespace InventoryApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("DeliveredDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("EmployeeId")
+                    b.Property<int>("GivenByEmployeeId")
                         .HasColumnType("int");
 
                     b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReceivedByEmployeeId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("ReturnDate")
@@ -69,9 +69,11 @@ namespace InventoryApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmployeeId");
+                    b.HasIndex("GivenByEmployeeId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ReceivedByEmployeeId");
 
                     b.ToTable("Inventories");
                 });
@@ -85,11 +87,9 @@ namespace InventoryApp.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("InvoiceInfo")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProductTypeId")
@@ -117,7 +117,6 @@ namespace InventoryApp.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -127,32 +126,57 @@ namespace InventoryApp.Migrations
 
             modelBuilder.Entity("InventoryApp.Models.Entity.Inventory", b =>
                 {
-                    b.HasOne("InventoryApp.Models.Entity.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("InventoryApp.Models.Entity.Employee", "GivenByEmployee")
+                        .WithMany("InventoriesGiven")
+                        .HasForeignKey("GivenByEmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("InventoryApp.Models.Entity.Product", "Product")
-                        .WithMany()
+                        .WithMany("Inventories")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Employee");
+                    b.HasOne("InventoryApp.Models.Entity.Employee", "ReceivedByEmployee")
+                        .WithMany("InventoriesReceived")
+                        .HasForeignKey("ReceivedByEmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("GivenByEmployee");
 
                     b.Navigation("Product");
+
+                    b.Navigation("ReceivedByEmployee");
                 });
 
             modelBuilder.Entity("InventoryApp.Models.Entity.Product", b =>
                 {
                     b.HasOne("InventoryApp.Models.Entity.ProductType", "ProductType")
-                        .WithMany()
+                        .WithMany("Products")
                         .HasForeignKey("ProductTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ProductType");
+                });
+
+            modelBuilder.Entity("InventoryApp.Models.Entity.Employee", b =>
+                {
+                    b.Navigation("InventoriesGiven");
+
+                    b.Navigation("InventoriesReceived");
+                });
+
+            modelBuilder.Entity("InventoryApp.Models.Entity.Product", b =>
+                {
+                    b.Navigation("Inventories");
+                });
+
+            modelBuilder.Entity("InventoryApp.Models.Entity.ProductType", b =>
+                {
+                    b.Navigation("Products");
                 });
 #pragma warning restore 612, 618
         }

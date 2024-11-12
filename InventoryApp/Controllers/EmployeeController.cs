@@ -1,6 +1,11 @@
-﻿using InventoryApp.Models.Context;
+﻿using AutoMapper;
+using InventoryApp.Application.Dto;
+using InventoryApp.Application.Interfaces;
+using InventoryApp.Models.Context;
+using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace InventoryApp.Controllers
 {
@@ -8,13 +13,110 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly InventoryAppDbContext _context;
+        private readonly IRepository<Employee> repository;
+        private readonly IMapper mapper;
 
-        public EmployeeController(InventoryAppDbContext context)
+        public EmployeeController(IRepository<Employee> repository, IMapper mapper)
         {
-            _context = context;
+            this.repository = repository;
+            this.mapper = mapper;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetEmployees()
+        {
+            var employees = await repository.GetAllAsync();
+            List<EmployeeDto> employeesDto = mapper.Map<List<EmployeeDto>>(employees.OrderBy(x => x.Name));
+            return Ok(employeesDto);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetEmployee(int id)
+        {
+            var employee = await repository.GetByIdAsync(id);
+
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
+            var employeeDto = mapper.Map<EmployeeDto>(employee);
+            return Ok(employeeDto);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> GetEmployeesByName([FromQuery] string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest("İsim kısmı boş geçilemez.");
+            }
+
+            var employees = await repository.GetByNameAsync(name);
+
+            if (employees.Count == 0)
+            {
+                return NotFound("Bu isme sahip hiçbir Employee yok.");
+            }
+
+            List<EmployeeDto> employeesDto = mapper.Map<List<EmployeeDto>>(employees);
+
+            return Ok(employeesDto);
         }
 
 
+        // POST: api/Employee
+        [HttpPost]
+        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeDto employeeDto)
+        {
+            if (employeeDto == null)
+            {
+                return BadRequest("Employee boş bırakılamaz.");
+            }
+
+            var employee = mapper.Map<Employee>(employeeDto);
+
+            await repository.CreateAsync(employee);
+
+            var createdEmployeeDto = mapper.Map<EmployeeDto>(employee);
+            return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, createdEmployeeDto);
+        }
+
+        // PUT: api/Employee/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeDto employeeDto)
+        {
+            if (employeeDto == null)
+            {
+                return BadRequest("EmployeeId boş bırakılamaz.");
+            }
+
+            var existingEmployee = await repository.GetByIdAsync(id);
+            if (existingEmployee == null)
+            {
+                return NotFound();
+            }
+
+            mapper.Map(employeeDto, existingEmployee);
+
+            await repository.UpdateAsync(existingEmployee);
+
+            return NoContent(); 
+        }
+
+        // DELETE: api/Employee/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEmployee(int id)
+        {
+            var employee = await repository.GetByIdAsync(id);
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
+            await repository.RemoveAsync(employee);
+
+            return NoContent();
+        }
     }
 }

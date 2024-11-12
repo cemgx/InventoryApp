@@ -1,6 +1,8 @@
 using AutoMapper;
+using InventoryApp.Application.Interfaces;
 using InventoryApp.Application.Mappings;
 using InventoryApp.Models.Context;
+using InventoryApp.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<InventoryAppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("Default Connection")));
+builder.Services.AddAutoMapper(typeof(EmployeeProfile).Assembly);
 builder.Services.AddAutoMapper(opt =>
 {
     opt.AddProfiles(new List<Profile>()
@@ -22,6 +25,7 @@ builder.Services.AddAutoMapper(opt =>
         new ProductTypeProfile(),
     });
 });
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
 var app = builder.Build();
 

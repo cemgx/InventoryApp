@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InventoryApp.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class pleaseMig : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,7 +31,7 @@ namespace InventoryApp.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -44,10 +44,10 @@ namespace InventoryApp.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProductTypeId = table.Column<int>(type: "int", nullable: false),
                     PurchasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    InvoiceInfo = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    InvoiceInfo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -67,9 +67,9 @@ namespace InventoryApp.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    EmployeeId = table.Column<int>(type: "int", nullable: false),
+                    GivenByEmployeeId = table.Column<int>(type: "int", nullable: false),
+                    ReceivedByEmployeeId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DeliveredDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ReturnDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -77,28 +77,37 @@ namespace InventoryApp.Migrations
                 {
                     table.PrimaryKey("PK_Inventories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Inventories_Employees_EmployeeId",
-                        column: x => x.EmployeeId,
+                        name: "FK_Inventories_Employees_GivenByEmployeeId",
+                        column: x => x.GivenByEmployeeId,
                         principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Inventories_Employees_ReceivedByEmployeeId",
+                        column: x => x.ReceivedByEmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Inventories_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Inventories_EmployeeId",
+                name: "IX_Inventories_GivenByEmployeeId",
                 table: "Inventories",
-                column: "EmployeeId");
+                column: "GivenByEmployeeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Inventories_ProductId",
                 table: "Inventories",
                 column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventories_ReceivedByEmployeeId",
+                table: "Inventories",
+                column: "ReceivedByEmployeeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_ProductTypeId",

@@ -9,5 +9,6 @@
         public decimal PurchasePrice { get; set; }
         public string? InvoiceInfo { get; set; }
         public DateTime PurchaseDate { get; set; }
+        public List<Inventory> Inventories { get; set; }
     }
 }
