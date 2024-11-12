@@ -26,7 +26,16 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetEmployees()
         {
             var employees = await repository.GetAllAsync();
-            List<EmployeeDto> employeesDto = mapper.Map<List<EmployeeDto>>(employees.OrderBy(x => x.Name));
+
+            var employeesDto = employees
+                .OrderBy(x => x.Name)
+                .Select(employee => new 
+                {
+                    employee.Id, 
+                    employee.Name,
+                    employee.Email
+                })
+                .ToList();
             return Ok(employeesDto);
         }
 
@@ -101,7 +110,7 @@ namespace InventoryApp.Controllers
 
             await repository.UpdateAsync(existingEmployee);
 
-            return NoContent(); 
+            return NoContent();
         }
 
         // DELETE: api/Employee/{id}
