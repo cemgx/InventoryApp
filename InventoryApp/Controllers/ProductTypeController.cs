@@ -69,8 +69,14 @@ namespace InventoryApp.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var productType = mapper.Map<ProductType>(productTypeDto);
+            var productType = new ProductType
+            {
+                Name = productTypeDto.Name
+            };
+
             await repository.CreateAsync(productType);
+
+            var createdProductTypeDto = mapper.Map<ProductTypeDto>(productType);
 
             return Created("", productTypeDto); 
         }
@@ -81,14 +87,21 @@ namespace InventoryApp.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            if (id != productTypeDto.Id)
+            {
+                return BadRequest("ID uyuşmazlığı: URL'deki ID ile gönderilen ID aynı olmalıdır.");
+            }
+
             var existingProductType = await repository.GetByIdAsync(id);
             if (existingProductType == null)
                 return NotFound();
 
-            mapper.Map(productTypeDto, existingProductType);
+            existingProductType.Name = productTypeDto.Name;
+
             await repository.UpdateAsync(existingProductType);
 
-            return NoContent();
+            var updatedProductTypeDto = mapper.Map<ProductTypeDto>(existingProductType);
+            return Ok(updatedProductTypeDto);
         }
 
         [HttpDelete("{id}")]
