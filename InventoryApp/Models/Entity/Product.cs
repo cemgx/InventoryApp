@@ -10,5 +10,6 @@
         public string? InvoiceInfo { get; set; }
         public DateTime PurchaseDate { get; set; }
         public List<Inventory> Inventories { get; set; }
+        public bool IsTaken { get; set; } = false;
     }
 }

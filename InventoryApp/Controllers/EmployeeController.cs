@@ -65,7 +65,7 @@ namespace InventoryApp.Controllers
 
             if (employees.Count == 0)
             {
-                return NotFound("Bu isme sahip hiçbir Employee yok.");
+                return NotFound("Bu isme sahip Employee yok.");
             }
 
             List<EmployeeDto> employeesDto = mapper.Map<List<EmployeeDto>>(employees);
@@ -74,7 +74,6 @@ namespace InventoryApp.Controllers
         }
 
 
-        // POST: api/Employee
         [HttpPost]
         public async Task<IActionResult> CreateEmployee([FromBody] EmployeeDto employeeDto)
         {
@@ -88,7 +87,7 @@ namespace InventoryApp.Controllers
             await repository.CreateAsync(employee);
 
             var createdEmployeeDto = mapper.Map<EmployeeDto>(employee);
-            return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, createdEmployeeDto);
+            return Created("", createdEmployeeDto);
         }
 
         // PUT: api/Employee/{id}

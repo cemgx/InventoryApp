@@ -10,5 +10,6 @@ namespace InventoryApp.Application.Dto
         public decimal PurchasePrice { get; set; }
         public string? InvoiceInfo { get; set; }
         public DateTime PurchaseDate { get; set; }
+        public bool IsTaken { get; set; }
     }
 }
