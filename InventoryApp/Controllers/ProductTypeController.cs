@@ -109,7 +109,7 @@ namespace InventoryApp.Controllers
         {
             var productType = await repository.GetByIdAsync(id);
             if (productType == null)
-                return NotFound();
+                return NotFound($"Id = {id} bulunamadı.");
 
             await repository.RemoveAsync(productType);
 
