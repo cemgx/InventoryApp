@@ -98,6 +98,7 @@ namespace InventoryApp.Controllers
 
             product.Name = productDto.Name;
             product.ProductTypeId = productDto.ProductTypeId;
+            await productRepository.UpdateAsync(product);
 
             return NoContent();
         }

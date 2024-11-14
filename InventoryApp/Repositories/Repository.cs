@@ -8,7 +8,7 @@ namespace InventoryApp.Repositories
 {
     public class Repository<T> : IRepository<T> where T : class, new()
     {
-        private readonly InventoryAppDbContext context;
+        protected readonly InventoryAppDbContext context;
 
         public Repository(InventoryAppDbContext context)
         {
