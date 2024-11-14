@@ -27,6 +27,11 @@ namespace InventoryApp.Controllers
         {
             var employees = await repository.GetAllAsync();
 
+            if (employees == null)
+            {
+                return NotFound();
+            }
+
             var employeesDto = employees
                 .OrderBy(x => x.Name)
                 .Select(employee => new 

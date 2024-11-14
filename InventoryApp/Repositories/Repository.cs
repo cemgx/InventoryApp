@@ -38,7 +38,6 @@ namespace InventoryApp.Repositories
 
         public async Task<List<T>> GetByNameAsync(string name)
         {
-            // Eğer entity'nin adı "Name" ise bu şekilde çalışır
             return await this.context.Set<T>()
                 .Where(e => EF.Property<string>(e, "Name").ToLower().Contains(name.ToLower()))
                 .ToListAsync();

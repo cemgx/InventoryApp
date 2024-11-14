@@ -24,6 +24,10 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetProductTypes()
         {
             var types = await repository.GetAllAsync();
+
+            if (types == null)
+                return NotFound();
+
             List<ProductTypeDto> productTypeDto = mapper.Map<List<ProductTypeDto>>(types.OrderBy(x => x.Name));
             return Ok(productTypeDto);
         }
@@ -35,9 +39,7 @@ namespace InventoryApp.Controllers
             var productType = await repository.GetByIdAsync(id);
 
             if (productType == null)
-            {
                 return NotFound();
-            }
 
             var productTypeDto = mapper.Map<ProductTypeDto>(productType);
             return Ok(productTypeDto);
@@ -47,16 +49,12 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetProductTypesByName([FromQuery] string name)
         {
             if (string.IsNullOrWhiteSpace(name))
-            {
                 return BadRequest("İsim kısmı boş geçilemez.");
-            }
 
             var productType = await repository.GetByNameAsync(name);
 
             if (productType.Count == 0)
-            {
                 return NotFound("Bu isme sahip Product Type yok.");
-            }
 
             List<ProductTypeDto> productTypeDto = mapper.Map<List<ProductTypeDto>>(productType);
 
@@ -78,7 +76,7 @@ namespace InventoryApp.Controllers
 
             var createdProductTypeDto = mapper.Map<ProductTypeDto>(productType);
 
-            return Created("", productTypeDto); 
+            return Created("", productTypeDto);
         }
 
         [HttpPut("{id}")]
@@ -88,9 +86,7 @@ namespace InventoryApp.Controllers
                 return BadRequest(ModelState);
 
             if (id != productTypeDto.Id)
-            {
                 return BadRequest("ID uyuşmazlığı: URL'deki ID ile gönderilen ID aynı olmalıdır.");
-            }
 
             var existingProductType = await repository.GetByIdAsync(id);
             if (existingProductType == null)

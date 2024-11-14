@@ -90,11 +90,8 @@ namespace InventoryApp.Controllers
                 return BadRequest(ModelState);
 
             var matchedProductType = await typeRepository.GetByIdAsync(productDto.ProductTypeId);
-
             if (matchedProductType == null)
-            {
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
-            }
 
             var product = mapper.Map<Product>(productDto);
             product.ProductTypeId = matchedProductType.Id;
@@ -104,8 +101,7 @@ namespace InventoryApp.Controllers
             product.InvoiceInfo = $"Ürün Id: {product.Id}, " +
                                   $"Ürün: {product.Name}, " +
                                   $"Ödenen Fiyat: {product.PurchasePrice}, " +
-                                  $"Alındığı Tarih: {product.PurchaseDate}, " +
-                                  $"Ürün şu an mevcut mu: {(product.IsTaken ? "Ürün mevcut değil" : "Ürün mevcut")}";
+                                  $"Alındığı Tarih: {product.PurchaseDate}";
 
             await productRepository.UpdateAsync(product);
 
@@ -131,8 +127,7 @@ namespace InventoryApp.Controllers
             product.InvoiceInfo = $"Ürün Id: {product.Id}, " +
                                   $"Ürün: {product.Name}, " +
                                   $"Ödenen Fiyat: {product.PurchasePrice}, " +
-                                  $"Alındığı Tarih: {product.PurchaseDate}, " +
-                                  $"Ürün şu an mevcut mu: {(product.IsTaken ? "Ürün mevcut değil" : "Ürün mevcut")}";
+                                  $"Alındığı Tarih: {product.PurchaseDate}";
 
             await productRepository.UpdateAsync(product);
 

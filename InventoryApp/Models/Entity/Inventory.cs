@@ -11,5 +11,6 @@
         public int ProductId { get; set; }
         public DateTime? DeliveredDate { get; set; }
         public DateTime? ReturnDate { get; set; }
+        public bool IsTaken { get; set; } = false;
     }
 }
