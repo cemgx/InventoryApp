@@ -13,10 +13,10 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly IRepository<Employee> repository;
+        private readonly IEmployeeRepository repository;
         private readonly IMapper mapper;
 
-        public EmployeeController(IRepository<Employee> repository, IMapper mapper)
+        public EmployeeController(IEmployeeRepository repository, IMapper mapper)
         {
             this.repository = repository;
             this.mapper = mapper;
@@ -95,7 +95,6 @@ namespace InventoryApp.Controllers
             return Created("", createdEmployeeDto);
         }
 
-        // PUT: api/Employee/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeDto employeeDto)
         {
@@ -117,7 +116,6 @@ namespace InventoryApp.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Employee/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {

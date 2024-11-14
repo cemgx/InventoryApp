@@ -4,6 +4,7 @@ using InventoryApp.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryApp.Migrations
 {
     [DbContext(typeof(InventoryAppDbContext))]
-    partial class InventoryAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241114102851_fully_invoice")]
+    partial class fully_invoice
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -98,10 +101,15 @@ namespace InventoryApp.Migrations
                     b.Property<int>("Price")
                         .HasColumnType("int");
 
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("PurchaseDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
 
                     b.ToTable("Invoices");
                 });
@@ -117,6 +125,9 @@ namespace InventoryApp.Migrations
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
+                    b.Property<int>("InvoiceId1")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -126,7 +137,7 @@ namespace InventoryApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InvoiceId");
+                    b.HasIndex("InvoiceId1");
 
                     b.HasIndex("ProductTypeId");
 
@@ -177,12 +188,23 @@ namespace InventoryApp.Migrations
                     b.Navigation("ReceivedByEmployee");
                 });
 
+            modelBuilder.Entity("InventoryApp.Models.Entity.Invoice", b =>
+                {
+                    b.HasOne("InventoryApp.Models.Entity.Product", "Product")
+                        .WithMany("Invoices")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("InventoryApp.Models.Entity.Product", b =>
                 {
                     b.HasOne("InventoryApp.Models.Entity.Invoice", "Invoice")
-                        .WithMany("Products")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId1")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("InventoryApp.Models.Entity.ProductType", "ProductType")
@@ -203,14 +225,11 @@ namespace InventoryApp.Migrations
                     b.Navigation("InventoriesReceived");
                 });
 
-            modelBuilder.Entity("InventoryApp.Models.Entity.Invoice", b =>
-                {
-                    b.Navigation("Products");
-                });
-
             modelBuilder.Entity("InventoryApp.Models.Entity.Product", b =>
                 {
                     b.Navigation("Inventories");
+
+                    b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("InventoryApp.Models.Entity.ProductType", b =>

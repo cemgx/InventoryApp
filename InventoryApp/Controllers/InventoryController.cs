@@ -11,10 +11,10 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class InventoryController : ControllerBase
     {
-        private readonly IRepository<Inventory> repository;
+        private readonly IInventoryRepository repository;
         private readonly IMapper mapper;
 
-        public InventoryController(IRepository<Inventory> repository, IMapper mapper)
+        public InventoryController(IInventoryRepository repository, IMapper mapper)
         {
             this.repository = repository;
             this.mapper = mapper;

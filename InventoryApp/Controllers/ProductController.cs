@@ -12,14 +12,16 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly IRepository<Product> productRepository;
-        private readonly IRepository<ProductType> typeRepository;
+        private readonly IProductRepository productRepository;
+        private readonly IProductTypeRepository typeRepository;
+        private readonly IInvoiceRepository invoiceRepository;
         private readonly IMapper mapper;
 
-        public ProductController(IRepository<Product> productRepository, IRepository<ProductType> typeRepository, IMapper mapper)
+        public ProductController(IProductRepository productRepository, IProductTypeRepository typeRepository, IInvoiceRepository invoiceRepository, IMapper mapper)
         {
             this.productRepository = productRepository;
             this.typeRepository = typeRepository;
+            this.invoiceRepository = invoiceRepository;
             this.mapper = mapper;
         }
 
@@ -71,8 +73,13 @@ namespace InventoryApp.Controllers
             if (matchedProductType == null)
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
 
+            var matchedInvoice = await invoiceRepository.GetByIdAsync(productDto.InvoiceId); // InvoiceId üzerinden eşle
+            if (matchedInvoice == null)
+                return BadRequest("Geçersiz bir InvoiceId girdiniz.");
+
             var product = mapper.Map<Product>(productDto);
             product.ProductTypeId = matchedProductType.Id;
+            product.InvoiceId = matchedInvoice.Id;
 
             await productRepository.CreateAsync(product);
 
@@ -91,8 +98,6 @@ namespace InventoryApp.Controllers
 
             product.Name = productDto.Name;
             product.ProductTypeId = productDto.ProductTypeId;
-            product.PurchasePrice = productDto.PurchasePrice;
-            product.PurchaseDate = productDto.PurchaseDate;
 
             return NoContent();
         }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InventoryApp.Models.Context
 {
-    public class InventoryAppDbContext : DbContext 
+    public class InventoryAppDbContext : DbContext
     {
         public InventoryAppDbContext(DbContextOptions<InventoryAppDbContext> options) : base(options) { }
         public DbSet<Employee> Employees { get; set; }
@@ -32,6 +32,12 @@ namespace InventoryApp.Models.Context
                 .HasOne(i => i.ReceivedByEmployee)
                 .WithMany(e => e.InventoriesReceived)
                 .HasForeignKey(i => i.ReceivedByEmployeeId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Invoice)
+                .WithMany(i => i.Products)
+                .HasForeignKey(p => p.InvoiceId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

@@ -22,9 +22,17 @@ builder.Services.AddAutoMapper(opt =>
         new InventoryProfile(),
         new ProductProfile(),
         new ProductTypeProfile(),
+        new InvoiceProfile(),
     });
 });
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>))
+                .AddScoped<IInvoiceRepository, InvoiceRepository>()
+                .AddScoped<IEmployeeRepository, EmployeeRepository>()
+                .AddScoped<IInventoryRepository, InventoryRepository>()
+                .AddScoped<IProductRepository, ProductRepository>()
+                .AddScoped<IProductTypeRepository, ProductTypeRepository>();
+
+
 
 var app = builder.Build();
 

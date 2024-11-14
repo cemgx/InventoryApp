@@ -2,8 +2,6 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Entity;
-using InventoryApp.Repositories;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryApp.Controllers
@@ -12,9 +10,9 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class ProductTypeController : ControllerBase
     {
-        private readonly IRepository<ProductType> repository;
+        private readonly IProductTypeRepository repository;
         private readonly IMapper mapper;
-        public ProductTypeController(IRepository<ProductType> repository, IMapper mapper)
+        public ProductTypeController(IProductTypeRepository repository, IMapper mapper)
         {
             this.repository = repository;
             this.mapper = mapper;
