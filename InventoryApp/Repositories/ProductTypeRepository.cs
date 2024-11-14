@@ -1,4 +1,5 @@
-﻿using InventoryApp.Models.Context;
+﻿using InventoryApp.Application.Interfaces;
+using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 
 namespace InventoryApp.Repositories

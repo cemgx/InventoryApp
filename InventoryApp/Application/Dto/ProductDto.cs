@@ -8,8 +8,7 @@ namespace InventoryApp.Application.Dto
         public string Name { get; set; }
         public int ProductTypeId { get; set; }
         public decimal PurchasePrice { get; set; }
-        public string? InvoiceInfo { get; set; }
+        public int InvoiceId { get; set; }
         public DateTime PurchaseDate { get; set; }
-        public bool IsTaken { get; set; } = false;
     }
 }

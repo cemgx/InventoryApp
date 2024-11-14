@@ -1,8 +1,8 @@
 ﻿namespace InventoryApp.Application.Dto
 {
-    public class ProductTypeDto
+    public class InvoiceDto
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string InvoiceInfo { get; set; }
     }
 }

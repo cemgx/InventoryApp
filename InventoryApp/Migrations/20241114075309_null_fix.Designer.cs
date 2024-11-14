@@ -4,6 +4,7 @@ using InventoryApp.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryApp.Migrations
 {
     [DbContext(typeof(InventoryAppDbContext))]
-    partial class InventoryAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241114075309_null_fix")]
+    partial class null_fix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,23 +83,6 @@ namespace InventoryApp.Migrations
                     b.ToTable("Inventories");
                 });
 
-            modelBuilder.Entity("InventoryApp.Models.Entity.Invoice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("InvoiceInfo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Invoices");
-                });
-
             modelBuilder.Entity("InventoryApp.Models.Entity.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -105,8 +91,8 @@ namespace InventoryApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int");
+                    b.Property<string>("InvoiceInfo")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -122,8 +108,6 @@ namespace InventoryApp.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("InvoiceId");
 
                     b.HasIndex("ProductTypeId");
 
@@ -176,19 +160,11 @@ namespace InventoryApp.Migrations
 
             modelBuilder.Entity("InventoryApp.Models.Entity.Product", b =>
                 {
-                    b.HasOne("InventoryApp.Models.Entity.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("InventoryApp.Models.Entity.ProductType", "ProductType")
                         .WithMany("Products")
                         .HasForeignKey("ProductTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Invoice");
 
                     b.Navigation("ProductType");
                 });

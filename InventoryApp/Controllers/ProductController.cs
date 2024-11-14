@@ -61,28 +61,6 @@ namespace InventoryApp.Controllers
             return Ok(productDtos);
         }
 
-        [HttpGet("Invoice Info Search")]
-        public async Task<IActionResult> GetProductInvoiceInfoByName([FromQuery] string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return BadRequest("Name parametresi boş bırakılamaz.");
-            }
-
-            var products = await productRepository.GetAllAsync();
-            var matchedProducts = products
-                .Where(p => p.Name != null && p.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
-                .Select(p => p.InvoiceInfo)
-                .ToList();
-
-            if (!matchedProducts.Any())
-            {
-                return NotFound("Bu isimle eşleşen bir ürün bulunamadı.");
-            }
-
-            return Ok(matchedProducts);
-        }
-
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] ProductDto productDto)
         {
@@ -97,13 +75,6 @@ namespace InventoryApp.Controllers
             product.ProductTypeId = matchedProductType.Id;
 
             await productRepository.CreateAsync(product);
-
-            product.InvoiceInfo = $"Ürün Id: {product.Id}, " +
-                                  $"Ürün: {product.Name}, " +
-                                  $"Ödenen Fiyat: {product.PurchasePrice}, " +
-                                  $"Alındığı Tarih: {product.PurchaseDate}";
-
-            await productRepository.UpdateAsync(product);
 
             return Created("", mapper.Map<ProductDto>(product));
         }
@@ -122,14 +93,6 @@ namespace InventoryApp.Controllers
             product.ProductTypeId = productDto.ProductTypeId;
             product.PurchasePrice = productDto.PurchasePrice;
             product.PurchaseDate = productDto.PurchaseDate;
-
-            // InvoiceInfo güncelleniyor
-            product.InvoiceInfo = $"Ürün Id: {product.Id}, " +
-                                  $"Ürün: {product.Name}, " +
-                                  $"Ödenen Fiyat: {product.PurchasePrice}, " +
-                                  $"Alındığı Tarih: {product.PurchaseDate}";
-
-            await productRepository.UpdateAsync(product);
 
             return NoContent();
         }
