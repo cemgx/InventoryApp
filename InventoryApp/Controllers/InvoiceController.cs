@@ -55,7 +55,7 @@ namespace InventoryApp.Controllers
 
             if (invoices.Count == 0)
             {
-                return NotFound("Bu isme sahip fatura yok.");
+                return NotFound("Bu isme sahip firma yok.");
             }
 
             List<InvoiceDto> invoicesDto = mapper.Map<List<InvoiceDto>>(invoices);
@@ -93,6 +93,7 @@ namespace InventoryApp.Controllers
             product.FirmName = invoiceDto.FirmName;
             product.Price = invoiceDto.Price;
             product.PurchaseDate = invoiceDto.PurchaseDate;
+
             await repository.UpdateAsync(product);
 
             return NoContent();

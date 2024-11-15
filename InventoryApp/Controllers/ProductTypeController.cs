@@ -84,7 +84,7 @@ namespace InventoryApp.Controllers
                 return BadRequest(ModelState);
 
             if (id != productTypeDto.Id)
-                return BadRequest("ID uyuşmazlığı: URL'deki ID ile gönderilen ID aynı olmalıdır.");
+                return BadRequest("ID uyuşmazlığı: yazdığınız ID ile değiştirmek istediğiniz ID aynı olmalı.");
 
             var existingProductType = await repository.GetByIdAsync(id);
             if (existingProductType == null)

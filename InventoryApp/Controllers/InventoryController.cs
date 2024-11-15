@@ -2,7 +2,6 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Entity;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryApp.Controllers
@@ -32,23 +31,40 @@ namespace InventoryApp.Controllers
             return Ok(inventoryDto);
         }
 
-        //[HttpGet("{productId} Find")]
-        //public async Task<IActionResult> GetInventoryByProductId(int productId)
-        //{
-        //    // ProductId'ye göre envanteri arama
-        //    var inventories = await inventoryRepository.GetByProductIdAsync(productId);
+        [HttpGet("product/{productId:int}")]
+        public async Task<IActionResult> GetInventoryByProductId(int productId)
+        {
+            var inventories = await inventoryRepository.GetByProductIdAsync(productId);
 
-        //    if (inventories == null || !inventories.Any())
-        //    {
-        //        return NotFound($"ProductId {productId} ile ilişkili envanter kaydı bulunamadı.");
-        //    }
+            if (inventories == null || inventories.Count == 0)
+            {
+                return NotFound($"{productId} numaralı ProductId ile ilişkili envanter kaydı bulunamadı.");
+            }
 
-        //    // Envanter verisini InventoryDto'ya dönüştürme
-        //    var inventoriesDto = mapper.Map<List<InventoryDto>>(inventories);
+            var inventoriesDto = mapper.Map<List<InventoryDto>>(inventories);
 
-        //    return Ok(inventoriesDto);
-        //}
+            return Ok(inventoriesDto);
+        }
 
+        [HttpGet("deliveredDateGet")]
+        public async Task<IActionResult> GetInventoryByDeliveredDate([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate > endDate)
+            {
+                return BadRequest("Başlangıç tarihi bitiş tarihinden büyük olamaz.");
+            }
+
+            var inventories = await inventoryRepository.GetByDeliveredDateAsync(startDate, endDate);
+
+            if (inventories.Count != 0)
+            {
+                var inventoriesDto = mapper.Map<List<InventoryDto>>(inventories);
+
+                return Ok(inventoriesDto);
+            }
+
+            return NotFound($"Girdiğiniz {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
+        }
 
         [HttpPost]
         public async Task<IActionResult> CreateInventory([FromBody] InventoryDto inventoryDto)
@@ -56,7 +72,6 @@ namespace InventoryApp.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Employee ve Product ID kontrolleri
             var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.GivenByEmployeeId);
             var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.ReceivedByEmployeeId);
             var product = await productRepository.GetByIdAsync(inventoryDto.ProductId);
@@ -68,17 +83,14 @@ namespace InventoryApp.Controllers
             if (product == null)
                 return NotFound("ProductId için geçerli bir Product bulunamadı.");
 
-            // Product isTaken kontrolü
             var existingInventory = await inventoryRepository.GetByProductIdWithIsTakenAsync(inventoryDto.ProductId);
             if (existingInventory != null && existingInventory.IsTaken)
             {
-                return BadRequest("Bu ürün şu anda başka bir kişi tarafından alındı ve iade edilmedi.");
+                return BadRequest("Bu ürün şu anda başka bir kişi tarafından alındı ve henüz iade edilmedi.");
             }
 
-            // Inventory oluşturma
             var inventory = mapper.Map<Inventory>(inventoryDto);
 
-            // IsTaken belirleme
             inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
 
             await inventoryRepository.CreateAsync(inventory);
@@ -87,5 +99,64 @@ namespace InventoryApp.Controllers
             return Created("", createdInventoryDto);
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryDto inventoryDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var inventory = await inventoryRepository.GetByIdAsync(id);
+            if (inventory == null)
+                return NotFound($"{id} numaralı Id ile eşleşen bir Inventory bulunamadı.");
+
+            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.GivenByEmployeeId);
+            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.ReceivedByEmployeeId);
+            var product = await productRepository.GetByIdAsync(inventoryDto.ProductId);
+
+            if (givenByEmployee == null)
+                return NotFound("GivenByEmployeeId için geçerli bir Employee bulunamadı.");
+            if (receivedByEmployee == null)
+                return NotFound("ReceivedByEmployeeId için geçerli bir Employee bulunamadı.");
+            if (product == null)
+                return NotFound("ProductId için geçerli bir Product bulunamadı.");
+
+            inventory.GivenByEmployeeId = inventoryDto.GivenByEmployeeId;
+            inventory.ReceivedByEmployeeId = inventoryDto.ReceivedByEmployeeId;
+            inventory.ProductId = inventoryDto.ProductId;
+            inventory.DeliveredDate = inventoryDto.DeliveredDate;
+            inventory.ReturnDate = inventoryDto.ReturnDate;
+
+            inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
+
+            await inventoryRepository.UpdateAsync(inventory);
+
+            return NoContent();
+        }
+
+        [HttpPut("{id}/updateReturnDate")]
+        public async Task<IActionResult> UpdateReturnDate(int id, [FromBody] DateTime? returnDate)
+        {
+            var existingInventory = await inventoryRepository.GetByIdAsync(id);
+            if (existingInventory == null)
+            {
+                return NotFound($"{id} numaralı Id ile eşleşen bir envanter kaydı bulunamadı.");
+            }
+
+            await inventoryRepository.UpdateReturnDateAsync(id, returnDate);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteInventory(int id)
+        {
+            var inventory = await inventoryRepository.GetByIdAsync(id);
+            if (inventory == null)
+                return NotFound($"Id = {id} bulunamadı.");
+
+            await inventoryRepository.RemoveAsync(inventory);
+
+            return NoContent();
+        }
     }
 }

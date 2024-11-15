@@ -2,8 +2,6 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Entity;
-using InventoryApp.Repositories;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryApp.Controllers
@@ -63,6 +61,26 @@ namespace InventoryApp.Controllers
             return Ok(productDtos);
         }
 
+        [HttpGet("purchaseDateGet")]
+        public async Task<IActionResult> GetProductsByInvoicePurchaseDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate > endDate)
+            {
+                return BadRequest("Başlangıç tarihi, bitiş tarihinden büyük olamaz.");
+            }
+
+            var products = await productRepository.GetByInvoicePurchaseDateAsync(startDate, endDate);
+
+            if (products.Count == 0)
+            {
+                return NotFound($"Belirtilen {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
+            }
+
+            var productsDto = mapper.Map<List<ProductDto>>(products);
+
+            return Ok(productsDto);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] ProductDto productDto)
         {
@@ -73,7 +91,7 @@ namespace InventoryApp.Controllers
             if (matchedProductType == null)
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
 
-            var matchedInvoice = await invoiceRepository.GetByIdAsync(productDto.InvoiceId); // InvoiceId üzerinden eşle
+            var matchedInvoice = await invoiceRepository.GetByIdAsync(productDto.InvoiceId);
             if (matchedInvoice == null)
                 return BadRequest("Geçersiz bir InvoiceId girdiniz.");
 
@@ -108,7 +126,7 @@ namespace InventoryApp.Controllers
         {
             var product = await productRepository.GetByIdAsync(id);
             if (product == null)
-                return NotFound();
+                return NotFound($"Id = {id} bulunamadı.");
 
             await productRepository.RemoveAsync(product);
 

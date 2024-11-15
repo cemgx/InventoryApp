@@ -16,6 +16,7 @@ namespace InventoryApp.Application.Interfaces
         Task UpdateAsync(T entity);
 
         Task RemoveAsync(T entity);
+
         Task<List<T>> GetByNameAsync(string name);
     }
 }
