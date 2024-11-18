@@ -13,7 +13,7 @@ namespace InventoryApp.Repositories
         public async Task<List<Product>> GetByInvoicePurchaseDateAsync(DateTime startDate, DateTime endDate)
         {
             return await context.Products
-                .Include(p => p.Invoice)
+                .Include(p => p.Invoice).AsNoTracking()
                 .Where(p => p.Invoice != null &&
                             p.Invoice.PurchaseDate >= startDate &&
                             p.Invoice.PurchaseDate <= endDate)

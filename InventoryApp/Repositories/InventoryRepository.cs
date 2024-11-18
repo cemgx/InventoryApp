@@ -18,7 +18,7 @@ namespace InventoryApp.Repositories
         }
         public async Task<List<Inventory>> GetByProductIdAsync(int productId)
         {
-            return await this.context.Set<Inventory>()
+            return await this.context.Set<Inventory>().AsNoTracking()
                 .Where(i => i.ProductId == productId)
                 .ToListAsync();
         }
