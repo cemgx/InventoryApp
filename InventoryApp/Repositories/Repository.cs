@@ -1,4 +1,5 @@
-﻿using InventoryApp.Application.Interfaces;
+﻿using InventoryApp.Application.Extensions;
+using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,8 @@ namespace InventoryApp.Repositories
         public async Task<List<T>> GetByNameAsync(string name)
         {
             return await this.context.Set<T>()
-                .Where(e => EF.Property<string>(e, "Name").ToLower().Contains(name.ToLower()))
+                .AsNoTracking()
+                .FilterByName(name)
                 .ToListAsync();
         }
 

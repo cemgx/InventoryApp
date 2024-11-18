@@ -32,7 +32,7 @@ namespace InventoryApp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInvoice(int id)
         {
-            var invoice = await repository.GetByIdAsync(id);
+            var invoice = await repository.GetByInvoiceIdAsync(id);
 
             if (invoice == null)
             {
@@ -46,11 +46,6 @@ namespace InventoryApp.Controllers
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return BadRequest("Ad kısmı boş geçilemez.");
-            }
-
             var invoices = await repository.GetByFirmNameAsync(name);
 
             if (invoices.Count == 0)

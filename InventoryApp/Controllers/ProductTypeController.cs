@@ -34,7 +34,7 @@ namespace InventoryApp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductType(int id)
         {
-            var productType = await repository.GetByIdAsync(id);
+            var productType = await repository.GetByProductTypeIdAsync(id);
 
             if (productType == null)
                 return NotFound();
@@ -46,11 +46,7 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetProductTypesByName([FromQuery] string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-                return BadRequest("İsim kısmı boş geçilemez.");
-
             var productType = await repository.GetByNameAsync(name);
-
             if (productType.Count == 0)
                 return NotFound("Bu isme sahip Product Type yok.");
 

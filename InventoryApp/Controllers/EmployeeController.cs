@@ -47,7 +47,7 @@ namespace InventoryApp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEmployee(int id)
         {
-            var employee = await repository.GetByIdAsync(id);
+            var employee = await repository.GetByEmployeeIdAsync(id);
 
             if (employee == null)
             {
@@ -61,11 +61,6 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetEmployeesByName([FromQuery] string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return BadRequest("İsim kısmı boş geçilemez.");
-            }
-
             var employees = await repository.GetByNameAsync(name);
 
             if (employees.Count == 0)

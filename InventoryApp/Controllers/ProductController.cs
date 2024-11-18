@@ -34,11 +34,12 @@ namespace InventoryApp.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await productRepository.GetByIdAsync(id);
+            var product = await productRepository.GetByProductIdAsync(id);
             if (product == null)
             {
                 return NotFound();
             }
+
             var productDto = mapper.Map<ProductDto>(product);
             return Ok(productDto);
         }
@@ -46,11 +47,6 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts([FromQuery] string name)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return BadRequest("İsim kısmı boş geçilemez.");
-            }
-
             var products = await productRepository.GetByNameAsync(name);
             if (products == null || products.Count == 0)
             {
