@@ -61,9 +61,9 @@ namespace InventoryApp.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateInvoice([FromBody] InvoiceDto invoiceDto)
         {
-            if (invoiceDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invoice boş bırakılamaz.");
+                return BadRequest(ModelState);
             }
 
             var invoice = mapper.Map<Invoice>(invoiceDto);

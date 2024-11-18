@@ -6,7 +6,7 @@ namespace InventoryApp.Application.Extensions
 {
     public static class QueryableExtensions
     {
-        // Name'e göre filtreleme yapan extension method
+        // Name e göre filtreleme
         public static IQueryable<T> FilterByProperty<T>(
             this IQueryable<T> query,
             string propertyName,
@@ -18,13 +18,12 @@ namespace InventoryApp.Application.Extensions
             if (string.IsNullOrWhiteSpace(searchValue))
                 throw new ArgumentException("Arama kriteri boş olamaz.", nameof(searchValue));
 
-            // EF.Property kullanarak dinamik bir filtreleme yap
             return query.Where(e => EF.Functions.Like(
                 EF.Property<string>(e, propertyName),
                 $"%{searchValue}%"));
         }
 
-        // Sadece "Name" alanını hedef alan kolay bir extension method
+        // Sadece "Name" 
         public static IQueryable<T> FilterByName<T>(
             this IQueryable<T> query,
             string name)
@@ -43,7 +42,7 @@ namespace InventoryApp.Application.Extensions
             return query.Where(entity => idSelector.Compile()(entity) == id);
         }
 
-        // Inventory: ProductId ve IsTaken ile filtreleme
+        // Inventory
         public static IQueryable<Inventory> FilterByProductIdWithIsTaken(
             this IQueryable<Inventory> query,
             int productId)
@@ -51,7 +50,6 @@ namespace InventoryApp.Application.Extensions
             return query.Where(i => i.ProductId == productId && i.IsTaken);
         }
 
-        // Inventory: Sadece ProductId ile filtreleme
         public static IQueryable<Inventory> FilterByProductId(
             this IQueryable<Inventory> query,
             int productId)
@@ -59,7 +57,6 @@ namespace InventoryApp.Application.Extensions
             return query.Where(i => i.ProductId == productId);
         }
 
-        // Inventory: DeliveredDate ile filtreleme (startDate ve endDate arası)
         public static IQueryable<Inventory> FilterByDeliveredDate(
             this IQueryable<Inventory> query,
             DateTime startDate,
@@ -68,7 +65,7 @@ namespace InventoryApp.Application.Extensions
             return query.Where(i => i.DeliveredDate >= startDate && i.DeliveredDate <= endDate);
         }
 
-        // Product: Invoice.PurchaseDate ile filtreleme
+        // Product
         public static IQueryable<Product> FilterByInvoicePurchaseDate(
             this IQueryable<Product> query,
             DateTime startDate,

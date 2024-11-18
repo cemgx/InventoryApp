@@ -3,6 +3,7 @@ using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
 {
@@ -36,7 +37,7 @@ namespace InventoryApp.Controllers
         {
             var inventories = await inventoryRepository.GetByProductIdAsync(productId);
 
-            if (inventories == null || inventories.Count == 0)
+            if (inventories.IsNullOrEmpty())
             {
                 return NotFound($"{productId} numaralı ProductId ile ilişkili envanter kaydı bulunamadı.");
             }

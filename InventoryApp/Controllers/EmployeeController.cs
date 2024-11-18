@@ -48,10 +48,9 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetEmployee(int id)
         {
             var employee = await repository.GetByEmployeeIdAsync(id);
-
             if (employee == null)
             {
-                return NotFound();
+                return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
             var employeeDto = mapper.Map<EmployeeDto>(employee);
@@ -77,13 +76,12 @@ namespace InventoryApp.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateEmployee([FromBody] EmployeeDto employeeDto)
         {
-            if (employeeDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Employee boş bırakılamaz.");
+                return BadRequest(ModelState);
             }
 
             var employee = mapper.Map<Employee>(employeeDto);
-
             await repository.CreateAsync(employee);
 
             var createdEmployeeDto = mapper.Map<EmployeeDto>(employee);
@@ -93,9 +91,9 @@ namespace InventoryApp.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeDto employeeDto)
         {
-            if (employeeDto == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("EmployeeId boş bırakılamaz.");
+                return BadRequest(ModelState);
             }
 
             var existingEmployee = await repository.GetByIdAsync(id);
@@ -117,12 +115,12 @@ namespace InventoryApp.Controllers
             var employee = await repository.GetByIdAsync(id);
             if (employee == null)
             {
-                return NotFound();
+                return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
             await repository.RemoveAsync(employee);
 
-            return NoContent();
+            return Ok($"{id} numaralı Employee başarıyla silindi.");
         }
     }
 }

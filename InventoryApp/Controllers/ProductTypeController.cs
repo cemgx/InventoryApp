@@ -22,7 +22,6 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetProductTypes()
         {
             var types = await repository.GetAllAsync();
-
             if (types == null)
                 return NotFound();
 
