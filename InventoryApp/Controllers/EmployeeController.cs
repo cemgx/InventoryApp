@@ -31,17 +31,9 @@ namespace InventoryApp.Controllers
             {
                 return NotFound();
             }
+            List<EmployeeResponseDto> employeeResponseDto = mapper.Map<List<EmployeeResponseDto>>(employees.OrderBy(x => x.Name));
 
-            var employeesDto = employees
-                .OrderBy(x => x.Name)
-                .Select(employee => new 
-                {
-                    employee.Id, 
-                    employee.Name,
-                    employee.Email
-                })
-                .ToList();
-            return Ok(employeesDto);
+            return Ok(employeeResponseDto);
         }
 
         [HttpGet("{id}")]
@@ -53,8 +45,8 @@ namespace InventoryApp.Controllers
                 return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
-            var employeeDto = mapper.Map<EmployeeDto>(employee);
-            return Ok(employeeDto);
+            var employeeResponseDto = mapper.Map<EmployeeResponseDto>(employee);
+            return Ok(employeeResponseDto);
         }
 
         [HttpGet("search")]
@@ -67,29 +59,29 @@ namespace InventoryApp.Controllers
                 return NotFound("Bu isme sahip Employee yok.");
             }
 
-            List<EmployeeDto> employeesDto = mapper.Map<List<EmployeeDto>>(employees);
+            List<EmployeeResponseDto> employeeResponseDto = mapper.Map<List<EmployeeResponseDto>>(employees);
 
-            return Ok(employeesDto);
+            return Ok(employeeResponseDto);
         }
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeDto employeeDto)
+        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var employee = mapper.Map<Employee>(employeeDto);
+            var employee = mapper.Map<Employee>(employeeRequestDto);
             await repository.CreateAsync(employee);
 
-            var createdEmployeeDto = mapper.Map<EmployeeDto>(employee);
-            return Created("", createdEmployeeDto);
+            var createdEmployeeRequestDto = mapper.Map<EmployeeRequestDto>(employee);
+            return Created("", createdEmployeeRequestDto);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeDto employeeDto)
+        public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeRequestDto employeeRequestDto)
         {
             if (!ModelState.IsValid)
             {
@@ -102,7 +94,7 @@ namespace InventoryApp.Controllers
                 return NotFound();
             }
 
-            mapper.Map(employeeDto, existingEmployee);
+            mapper.Map(employeeRequestDto, existingEmployee);
 
             await repository.UpdateAsync(existingEmployee);
 

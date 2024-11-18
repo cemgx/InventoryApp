@@ -2,11 +2,9 @@
 
 namespace InventoryApp.Application.Dto
 {
-    public class EmployeeDto
+    public class EmployeeRequestDto
     {
-        public int Id { get; set; }
-
-        [Required(ErrorMessage ="İsim değeri boş olamaz")]
+        [Required(ErrorMessage = "İsim değeri boş olamaz")]
         public string Name { get; set; }
 
         [EmailAddress(ErrorMessage = "Geçerli bir mail adresi giriniz.")]
