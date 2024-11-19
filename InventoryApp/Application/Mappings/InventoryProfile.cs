@@ -8,7 +8,9 @@ namespace InventoryApp.Application.Mappings
     {
         public InventoryProfile()
         {
-            this.CreateMap<Inventory, InventoryDto>().ReverseMap();
+            this.CreateMap<Inventory, InventoryResponseDto>().ReverseMap();
+
+            this.CreateMap<Inventory, InventoryRequestDto>().ReverseMap();
         }
     }
 }

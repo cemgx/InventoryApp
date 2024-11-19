@@ -28,8 +28,8 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetInventories()
         {
             var types = await inventoryRepository.GetAllAsync();
-            List<InventoryDto> inventoryDto = mapper.Map<List<InventoryDto>>(types);
-            return Ok(inventoryDto);
+            List<InventoryResponseDto> inventoryResponseDto = mapper.Map<List<InventoryResponseDto>>(types);
+            return Ok(inventoryResponseDto);
         }
 
         [HttpGet("product/{productId:int}")]
@@ -42,7 +42,7 @@ namespace InventoryApp.Controllers
                 return NotFound($"{productId} numaralı ProductId ile ilişkili envanter kaydı bulunamadı.");
             }
 
-            var inventoriesDto = mapper.Map<List<InventoryDto>>(inventories);
+            var inventoriesDto = mapper.Map<List<InventoryResponseDto>>(inventories);
 
             return Ok(inventoriesDto);
         }
@@ -59,7 +59,7 @@ namespace InventoryApp.Controllers
 
             if (inventories.Count != 0)
             {
-                var inventoriesDto = mapper.Map<List<InventoryDto>>(inventories);
+                var inventoriesDto = mapper.Map<List<InventoryResponseDto>>(inventories);
 
                 return Ok(inventoriesDto);
             }
@@ -68,14 +68,14 @@ namespace InventoryApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateInventory([FromBody] InventoryDto inventoryDto)
+        public async Task<IActionResult> CreateInventory([FromBody] InventoryRequestDto inventoryRequestDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.GivenByEmployeeId);
-            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.ReceivedByEmployeeId);
-            var product = await productRepository.GetByIdAsync(inventoryDto.ProductId);
+            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId);
+            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId);
+            var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId);
 
             if (givenByEmployee == null)
                 return NotFound("GivenByEmployeeId için geçerli bir Employee bulunamadı.");
@@ -84,22 +84,22 @@ namespace InventoryApp.Controllers
             if (product == null)
                 return NotFound("ProductId için geçerli bir Product bulunamadı.");
 
-            var existingInventory = await inventoryRepository.GetByProductIdWithIsTakenAsync(inventoryDto.ProductId);
+            var existingInventory = await inventoryRepository.GetByProductIdWithIsTakenAsync(inventoryRequestDto.ProductId);
             if (existingInventory != null && existingInventory.IsTaken)
             {
                 return BadRequest("Bu ürün şu anda başka bir kişi tarafından alındı ve henüz iade edilmedi.");
             }
 
-            var inventory = mapper.Map<Inventory>(inventoryDto);
+            var inventory = mapper.Map<Inventory>(inventoryRequestDto);
 
             await inventoryRepository.CreateAsync(inventory);
-            var createdInventoryDto = mapper.Map<InventoryDto>(inventory);
+            var createdInventoryDto = mapper.Map<InventoryRequestDto>(inventory);
 
             return Created("", createdInventoryDto);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryDto inventoryDto)
+        public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryRequestDto inventoryRequestDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -108,9 +108,9 @@ namespace InventoryApp.Controllers
             if (inventory == null)
                 return NotFound($"{id} numaralı Id ile eşleşen bir Inventory bulunamadı.");
 
-            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.GivenByEmployeeId);
-            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryDto.ReceivedByEmployeeId);
-            var product = await productRepository.GetByIdAsync(inventoryDto.ProductId);
+            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId);
+            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId);
+            var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId);
 
             if (givenByEmployee == null)
                 return NotFound("GivenByEmployeeId için geçerli bir Employee bulunamadı.");
@@ -119,11 +119,7 @@ namespace InventoryApp.Controllers
             if (product == null)
                 return NotFound("ProductId için geçerli bir Product bulunamadı.");
 
-            inventory.GivenByEmployeeId = inventoryDto.GivenByEmployeeId;
-            inventory.ReceivedByEmployeeId = inventoryDto.ReceivedByEmployeeId;
-            inventory.ProductId = inventoryDto.ProductId;
-            inventory.DeliveredDate = inventoryDto.DeliveredDate;
-            inventory.ReturnDate = inventoryDto.ReturnDate;
+            mapper.Map(inventoryRequestDto, inventory);
 
             inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
 
