@@ -5,6 +5,7 @@ using InventoryApp.Models.Entity;
 using InventoryApp.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
 {
@@ -13,12 +14,14 @@ namespace InventoryApp.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly IInvoiceRepository repository;
+        private readonly IProductRepository productRepository;
         private readonly IMapper mapper;
 
-        public InvoiceController(IInvoiceRepository repository, IMapper mapper)
+        public InvoiceController(IInvoiceRepository repository, IMapper mapper, IProductRepository productRepository)
         {
             this.repository = repository;
             this.mapper = mapper;
+            this.productRepository = productRepository;
         }
 
         [HttpGet]
@@ -40,7 +43,7 @@ namespace InventoryApp.Controllers
 
             var invoiceResponseDto = mapper.Map<InvoiceResponseDto>(invoice);
             return Ok(invoiceResponseDto);
-        }
+        } //InvoiceController'ımın içerisinde Invoice Id'ye göre invoice'ların sahip oldukları product id'lerini görmek istiyorum. bunun için gerekli kodu yaz. 
 
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name)
@@ -55,6 +58,20 @@ namespace InventoryApp.Controllers
 
             return Ok(invoicesResponseDto);
         }
+
+        [HttpGet("{invoiceId}/products")]
+        public async Task<IActionResult> GetProductsByInvoiceId(int invoiceId)
+        {
+            var productIds = await productRepository.GetProductIdsByInvoiceIdAsync(invoiceId);
+
+            if (!productIds.IsNullOrEmpty())
+            {
+                return NotFound($"{invoiceId} id numaralı fatura ile ilişkilendirilmiş bir ürün bulunamadı.");
+            }
+
+            return Ok(productIds);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto)

@@ -29,5 +29,13 @@ namespace InventoryApp.Repositories
                 .FilterByInvoicePurchaseDate(startDate, endDate)
                 .ToListAsync();
         }
+
+        public async Task<List<int>> GetProductIdsByInvoiceIdAsync(int invoiceId)
+        {
+            return await this.context.Products
+                .AsNoTracking()
+                .FilterProductIdsByInvoiceId(invoiceId)
+                .ToListAsync();
+        }
     }
 }

@@ -6,5 +6,6 @@ namespace InventoryApp.Application.Interfaces
     {
         Task<List<Product>> GetByInvoicePurchaseDateAsync(DateTime startDate, DateTime endDate);
         Task<List<Product>> GetByProductIdAsync(int productId);
+        Task<List<int>> GetProductIdsByInvoiceIdAsync(int invoiceId);
     }
 }

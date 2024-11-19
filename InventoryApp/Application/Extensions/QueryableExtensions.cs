@@ -81,5 +81,14 @@ namespace InventoryApp.Application.Extensions
                             p.Invoice.PurchaseDate >= startDate &&
                             p.Invoice.PurchaseDate <= endDate);
         }
+
+        //Invoice
+        public static IQueryable<int> FilterProductIdsByInvoiceId(
+        this IQueryable<Product> query,
+        int invoiceId)
+        {
+            return query.Where(p => p.InvoiceId == invoiceId)
+                        .Select(p => p.Id);
+        }
     }
 }
