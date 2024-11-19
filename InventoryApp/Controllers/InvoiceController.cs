@@ -41,9 +41,9 @@ namespace InventoryApp.Controllers
                 return NotFound();
             }
 
-            var invoiceResponseDto = mapper.Map<InvoiceResponseDto>(invoice);
+            var invoiceResponseDto = mapper.Map<List<InvoiceResponseDto>>(invoice);
             return Ok(invoiceResponseDto);
-        } //InvoiceController'ımın içerisinde Invoice Id'ye göre invoice'ların sahip oldukları product id'lerini görmek istiyorum. bunun için gerekli kodu yaz. 
+        }
 
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name)
@@ -64,7 +64,7 @@ namespace InventoryApp.Controllers
         {
             var productIds = await productRepository.GetProductIdsByInvoiceIdAsync(invoiceId);
 
-            if (!productIds.IsNullOrEmpty())
+            if (productIds.IsNullOrEmpty())
             {
                 return NotFound($"{invoiceId} id numaralı fatura ile ilişkilendirilmiş bir ürün bulunamadı.");
             }

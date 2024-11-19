@@ -41,7 +41,7 @@ namespace InventoryApp.Controllers
                 return NotFound();
             }
 
-            var productResponseDto = mapper.Map<ProductResponseDto>(product);
+            var productResponseDto = mapper.Map<List<ProductResponseDto>>(product);
             return Ok(productResponseDto);
         }
 

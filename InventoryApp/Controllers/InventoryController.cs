@@ -92,6 +92,8 @@ namespace InventoryApp.Controllers
 
             var inventory = mapper.Map<Inventory>(inventoryRequestDto);
 
+            inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
+
             await inventoryRepository.CreateAsync(inventory);
             var createdInventoryDto = mapper.Map<InventoryRequestDto>(inventory);
 

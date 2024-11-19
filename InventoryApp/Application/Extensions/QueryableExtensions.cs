@@ -34,13 +34,13 @@ namespace InventoryApp.Application.Extensions
             return query.FilterByProperty("Name", name);
         }
 
-        public static IQueryable<T> FilterById<T>(
+        public static IQueryable<T> FilterById<T, TId>(
             this IQueryable<T> query,
-            Expression<Func<T, int>> idSelector,
-            int id)
+            Expression<Func<T, TId>> idSelector,
+            TId id)
         {
             var parameter = idSelector.Parameters[0];
-            var body = Expression.Equal(idSelector.Body, Expression.Constant(id));
+            var body = Expression.Equal(idSelector.Body, Expression.Constant(id, typeof(TId)));
             var lambda = Expression.Lambda<Func<T, bool>>(body, parameter);
 
             return query.Where(lambda);

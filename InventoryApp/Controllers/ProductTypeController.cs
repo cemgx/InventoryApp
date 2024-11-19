@@ -38,7 +38,7 @@ namespace InventoryApp.Controllers
             if (productType == null)
                 return NotFound();
 
-            var productTypeResponseDto = mapper.Map<ProductTypeResponseDto>(productType);
+            var productTypeResponseDto = mapper.Map<List<ProductTypeResponseDto>>(productType);
             return Ok(productTypeResponseDto);
         }
 
