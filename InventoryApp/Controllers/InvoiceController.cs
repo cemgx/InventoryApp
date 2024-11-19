@@ -25,71 +25,66 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetInvoices()
         {
             var types = await repository.GetAllAsync();
-            List<InvoiceDto> invoiceDto = mapper.Map<List<InvoiceDto>>(types);
-            return Ok(invoiceDto);
+            List<InvoiceResponseDto> invoiceResponseDto = mapper.Map<List<InvoiceResponseDto>>(types);
+            return Ok(invoiceResponseDto);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInvoice(int id)
         {
             var invoice = await repository.GetByInvoiceIdAsync(id);
-
             if (invoice == null)
             {
                 return NotFound();
             }
 
-            var invoiceDto = mapper.Map<InvoiceDto>(invoice);
-            return Ok(invoiceDto);
+            var invoiceResponseDto = mapper.Map<InvoiceResponseDto>(invoice);
+            return Ok(invoiceResponseDto);
         }
 
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name)
         {
             var invoices = await repository.GetByFirmNameAsync(name);
-
             if (invoices.Count == 0)
             {
                 return NotFound("Bu isme sahip firma yok.");
             }
 
-            List<InvoiceDto> invoicesDto = mapper.Map<List<InvoiceDto>>(invoices);
+            List<InvoiceResponseDto> invoicesResponseDto = mapper.Map<List<InvoiceResponseDto>>(invoices);
 
-            return Ok(invoicesDto);
+            return Ok(invoicesResponseDto);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateInvoice([FromBody] InvoiceDto invoiceDto)
+        public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var invoice = mapper.Map<Invoice>(invoiceDto);
+            var invoice = mapper.Map<Invoice>(invoiceRequestDto);
 
             await repository.CreateAsync(invoice);
 
-            var createdInvoiceDto = mapper.Map<InvoiceDto>(invoice);
+            var createdInvoiceDto = mapper.Map<InvoiceRequestDto>(invoice);
             return Created("", createdInvoiceDto);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceDto invoiceDto)
+        public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceRequestDto invoiceRequestDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var product = await repository.GetByIdAsync(id);
-            if (product == null)
-                return NotFound();
+            var invoice = await repository.GetByIdAsync(id);
+            if (invoice == null)
+                return NotFound("{id} numaralı Id ile eşleşen bir Invoice bulunamadı.");
 
-            product.InvoiceNo = invoiceDto.InvoiceNo;
-            product.FirmName = invoiceDto.FirmName;
-            product.Price = invoiceDto.Price;
-            product.PurchaseDate = invoiceDto.PurchaseDate;
+            mapper.Map(invoiceRequestDto, invoice);
 
-            await repository.UpdateAsync(product);
+            await repository.UpdateAsync(invoice);
 
             return NoContent();
         }

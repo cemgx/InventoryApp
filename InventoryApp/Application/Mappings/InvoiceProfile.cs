@@ -8,7 +8,9 @@ namespace InventoryApp.Application.Mappings
     {
         public InvoiceProfile() 
         {
-            this.CreateMap<Invoice, InvoiceDto>().ReverseMap();
+            this.CreateMap<Invoice, InvoiceResponseDto>().ReverseMap();
+
+            this.CreateMap<Invoice, InvoiceRequestDto>().ReverseMap();
         }
     }
 }

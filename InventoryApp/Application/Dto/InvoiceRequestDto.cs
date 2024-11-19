@@ -2,10 +2,8 @@
 
 namespace InventoryApp.Application.Dto
 {
-    public class InvoiceDto
+    public class InvoiceRequestDto
     {
-        public int Id { get; set; }
-
         [Required(ErrorMessage = "InvoiceNo boş bırakılamaz.")]
         [Range(1, int.MaxValue, ErrorMessage = "InvoiceNo geçerli bir pozitif sayı olmalıdır.")]
         public int InvoiceNo { get; set; }
