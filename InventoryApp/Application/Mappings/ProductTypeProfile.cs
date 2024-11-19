@@ -8,7 +8,9 @@ namespace InventoryApp.Application.Mappings
     {
         public ProductTypeProfile()
         {
-            this.CreateMap<ProductType, ProductTypeDto>().ReverseMap();
+            this.CreateMap<ProductType, ProductTypeResponseDto>().ReverseMap();
+
+            this.CreateMap<ProductType, ProductTypeRequestDto>().ReverseMap();
         }
     }
 }

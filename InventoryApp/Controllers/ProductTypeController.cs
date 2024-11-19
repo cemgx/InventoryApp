@@ -25,8 +25,8 @@ namespace InventoryApp.Controllers
             if (types == null)
                 return NotFound();
 
-            List<ProductTypeDto> productTypeDto = mapper.Map<List<ProductTypeDto>>(types.OrderBy(x => x.Name));
-            return Ok(productTypeDto);
+            List<ProductTypeResponseDto> productTypeResponseDto = mapper.Map<List<ProductTypeResponseDto>>(types.OrderBy(x => x.Name));
+            return Ok(productTypeResponseDto);
         }
 
 
@@ -38,8 +38,8 @@ namespace InventoryApp.Controllers
             if (productType == null)
                 return NotFound();
 
-            var productTypeDto = mapper.Map<ProductTypeDto>(productType);
-            return Ok(productTypeDto);
+            var productTypeResponseDto = mapper.Map<ProductTypeResponseDto>(productType);
+            return Ok(productTypeResponseDto);
         }
 
         [HttpGet("search")]
@@ -49,47 +49,40 @@ namespace InventoryApp.Controllers
             if (productType.Count == 0)
                 return NotFound("Bu isme sahip Product Type yok.");
 
-            List<ProductTypeDto> productTypeDto = mapper.Map<List<ProductTypeDto>>(productType);
+            List<ProductTypeResponseDto> productTypeResponseDto = mapper.Map<List<ProductTypeResponseDto>>(productType);
 
-            return Ok(productType);
+            return Ok(productTypeResponseDto);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProductType([FromBody] ProductTypeDto productTypeDto)
+        public async Task<IActionResult> CreateProductType([FromBody] ProductTypeRequestDto productTypeRequestDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var productType = new ProductType
-            {
-                Name = productTypeDto.Name
-            };
+            var product = mapper.Map<ProductType>(productTypeRequestDto);
+            await repository.CreateAsync(product);
 
-            await repository.CreateAsync(productType);
+            var createdProductTypeDto = mapper.Map<ProductTypeResponseDto>(product);
 
-            var createdProductTypeDto = mapper.Map<ProductTypeDto>(productType);
-
-            return Created("", productTypeDto);
+            return Created("", createdProductTypeDto);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProductType(int id, [FromBody] ProductTypeDto productTypeDto)
+        public async Task<IActionResult> UpdateProductType(int id, [FromBody] ProductTypeRequestDto productTypeRequestDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-
-            if (id != productTypeDto.Id)
-                return BadRequest("ID uyuşmazlığı: yazdığınız ID ile değiştirmek istediğiniz ID aynı olmalı.");
 
             var existingProductType = await repository.GetByIdAsync(id);
             if (existingProductType == null)
                 return NotFound();
 
-            existingProductType.Name = productTypeDto.Name;
+            mapper.Map(productTypeRequestDto, existingProductType);
 
             await repository.UpdateAsync(existingProductType);
 
-            var updatedProductTypeDto = mapper.Map<ProductTypeDto>(existingProductType);
+            var updatedProductTypeDto = mapper.Map<ProductTypeRequestDto>(existingProductType);
             return Ok(updatedProductTypeDto);
         }
 

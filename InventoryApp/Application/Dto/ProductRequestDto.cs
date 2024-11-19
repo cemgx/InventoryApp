@@ -1,12 +1,9 @@
-﻿using InventoryApp.Models.Entity;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace InventoryApp.Application.Dto
 {
-    public class ProductDto
+    public class ProductRequestDto
     {
-        public int Id { get; set; }
-
         [Required(ErrorMessage = "İsim değeri boş olamaz")]
         public string Name { get; set; }
         public int ProductTypeId { get; set; }

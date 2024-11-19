@@ -2,7 +2,7 @@
 
 namespace InventoryApp.Application.Dto
 {
-    public class ProductTypeDto
+    public class ProductTypeResponseDto
     {
         public int Id { get; set; }
 
