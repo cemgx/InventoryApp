@@ -39,7 +39,11 @@ namespace InventoryApp.Application.Extensions
             Expression<Func<T, int>> idSelector,
             int id)
         {
-            return query.Where(entity => idSelector.Compile()(entity) == id);
+            var parameter = idSelector.Parameters[0];
+            var body = Expression.Equal(idSelector.Body, Expression.Constant(id));
+            var lambda = Expression.Lambda<Func<T, bool>>(body, parameter);
+
+            return query.Where(lambda);
         }
 
         // Inventory

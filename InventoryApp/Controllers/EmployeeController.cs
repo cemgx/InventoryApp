@@ -45,7 +45,7 @@ namespace InventoryApp.Controllers
                 return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
-            var employeeResponseDto = mapper.Map<EmployeeResponseDto>(employee);
+            var employeeResponseDto = mapper.Map<List<EmployeeResponseDto>>(employee);
             return Ok(employeeResponseDto);
         }
 
