@@ -80,9 +80,17 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInventory([FromBody] InventoryRequestDto inventoryRequestDto)
         {
-            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId);
-            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId);
-            var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId);
+            Task[] inventoryInfos =
+            [
+                employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId),
+                employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId),
+                productRepository.GetByIdAsync(inventoryRequestDto.ProductId),
+            ];
+            var employeesAndProduct = Task.WhenAll(inventoryInfos);
+
+            var givenByEmployee = inventoryInfos[0];
+            var receivedByEmployee = inventoryInfos[1];
+            var product = inventoryInfos[2];
 
             if (givenByEmployee == null)
                 return NotFound("GivenByEmployeeId için geçerli bir Employee bulunamadı.");
