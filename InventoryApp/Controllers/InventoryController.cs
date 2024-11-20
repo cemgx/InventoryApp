@@ -27,9 +27,10 @@ namespace InventoryApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetInventories()
         {
-            var types = await inventoryRepository.GetAllAsync();
-            List<InventoryResponseDto> inventoryResponseDto = mapper.Map<List<InventoryResponseDto>>(types);
-            return Ok(inventoryResponseDto);
+            var inventories = await inventoryRepository.GetAllAsync();
+
+            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
+            return Ok(result);
         }
 
         [HttpGet("product/{productId:int}")]
@@ -42,9 +43,9 @@ namespace InventoryApp.Controllers
                 return NotFound($"{productId} numaralı ProductId ile ilişkili envanter kaydı bulunamadı.");
             }
 
-            var inventoriesDto = mapper.Map<List<InventoryResponseDto>>(inventories);
+            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
 
-            return Ok(inventoriesDto);
+            return Ok(result);
         }
 
         [HttpGet("deliveredDateGet")]
@@ -56,23 +57,29 @@ namespace InventoryApp.Controllers
             }
 
             var inventories = await inventoryRepository.GetByDeliveredDateAsync(startDate, endDate);
-
-            if (inventories.Count != 0)
+            if (inventories.IsNullOrEmpty())
             {
-                var inventoriesDto = mapper.Map<List<InventoryResponseDto>>(inventories);
-
-                return Ok(inventoriesDto);
+                return NotFound($"Girdiğiniz {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
             }
 
-            return NotFound($"Girdiğiniz {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
+            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
+            return Ok(result);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllInventories()
+        {
+            var inventories = await inventoryRepository.GetAllIncludingDeletedAsync();
+
+            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
+            return Ok(result);
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInventory([FromBody] InventoryRequestDto inventoryRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId);
             var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId);
             var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId);
@@ -95,17 +102,16 @@ namespace InventoryApp.Controllers
             inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
 
             await inventoryRepository.CreateAsync(inventory);
-            var createdInventoryDto = mapper.Map<InventoryRequestDto>(inventory);
+            var result = mapper.Map<InventoryRequestDto>(inventory);
 
-            return Created("", createdInventoryDto);
+            return Created("", result);
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryRequestDto inventoryRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var inventory = await inventoryRepository.GetByIdAsync(id);
             if (inventory == null)
                 return NotFound($"{id} numaralı Id ile eşleşen bir Inventory bulunamadı.");
@@ -127,7 +133,7 @@ namespace InventoryApp.Controllers
 
             await inventoryRepository.UpdateAsync(inventory);
 
-            return NoContent();
+            return Ok($"{id} numaralı Id ile eşleşen Inventory güncellendi.");
         }
 
         [HttpPut("{id}/updateReturnDate")]
@@ -151,9 +157,9 @@ namespace InventoryApp.Controllers
             if (inventory == null)
                 return NotFound($"Id = {id} bulunamadı.");
 
-            await inventoryRepository.RemoveAsync(inventory);
+            await inventoryRepository.SoftDeleteAsync(inventory);
 
-            return NoContent();
+            return Ok($"{id} numaralı Inventory başarıyla kaldırıldı.");
         }
     }
 }

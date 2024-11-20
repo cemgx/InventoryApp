@@ -3,6 +3,7 @@ using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
 {
@@ -22,11 +23,12 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetProductTypes()
         {
             var types = await repository.GetAllAsync();
-            if (types == null)
+            if (types.IsNullOrEmpty())
                 return NotFound();
 
-            List<ProductTypeResponseDto> productTypeResponseDto = mapper.Map<List<ProductTypeResponseDto>>(types.OrderBy(x => x.Name));
-            return Ok(productTypeResponseDto);
+            var orderByProductType = types.OrderBy(x => x.Name);
+            var result = mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
+            return Ok(result);
         }
 
 
@@ -34,46 +36,53 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetProductType(int id)
         {
             var productType = await repository.GetByProductTypeIdAsync(id);
-
-            if (productType == null)
+            if (productType.IsNullOrEmpty())
                 return NotFound();
 
-            var productTypeResponseDto = mapper.Map<List<ProductTypeResponseDto>>(productType);
-            return Ok(productTypeResponseDto);
+            var result = mapper.Map<List<ProductTypeResponseDto>>(productType);
+            return Ok(result);
         }
 
         [HttpGet("search")]
         public async Task<IActionResult> GetProductTypesByName([FromQuery] string name)
         {
             var productType = await repository.GetByNameAsync(name);
-            if (productType.Count == 0)
+            if (productType.IsNullOrEmpty())
                 return NotFound("Bu isme sahip Product Type yok.");
 
-            List<ProductTypeResponseDto> productTypeResponseDto = mapper.Map<List<ProductTypeResponseDto>>(productType);
+            var result = mapper.Map<List<ProductTypeResponseDto>>(productType);
+            return Ok(result);
+        }
 
-            return Ok(productTypeResponseDto);
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllProductTypes()
+        {
+            var types = await repository.GetAllIncludingDeletedAsync();
+            if (types.IsNullOrEmpty())
+                return NotFound();
+
+            var orderByProductType = types.OrderBy(x => x.Name);
+            var result = mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
+            return Ok(result);
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProductType([FromBody] ProductTypeRequestDto productTypeRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var product = mapper.Map<ProductType>(productTypeRequestDto);
             await repository.CreateAsync(product);
 
-            var createdProductTypeDto = mapper.Map<ProductTypeResponseDto>(product);
-
-            return Created("", createdProductTypeDto);
+            var result = mapper.Map<ProductTypeResponseDto>(product);
+            return Created("", result);
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProductType(int id, [FromBody] ProductTypeRequestDto productTypeRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var existingProductType = await repository.GetByIdAsync(id);
             if (existingProductType == null)
                 return NotFound();
@@ -82,8 +91,8 @@ namespace InventoryApp.Controllers
 
             await repository.UpdateAsync(existingProductType);
 
-            var updatedProductTypeDto = mapper.Map<ProductTypeRequestDto>(existingProductType);
-            return Ok(updatedProductTypeDto);
+            var result = mapper.Map<ProductTypeRequestDto>(existingProductType);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
@@ -93,9 +102,9 @@ namespace InventoryApp.Controllers
             if (productType == null)
                 return NotFound($"Id = {id} bulunamadı.");
 
-            await repository.RemoveAsync(productType);
+            await repository.SoftDeleteAsync(productType);
 
-            return NoContent();
+            return Ok($"{id} numaralı ProductType başarıyla kaldırıldı.");
         }
     }
 }

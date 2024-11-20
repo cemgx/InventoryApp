@@ -1,6 +1,8 @@
-﻿namespace InventoryApp.Models.Entity
+﻿using InventoryApp.Application.Interfaces;
+
+namespace InventoryApp.Models.Entity
 {
-    public class Inventory
+    public class Inventory : ISoftDelete
     {
         public int Id { get; set; }
         public Employee GivenByEmployee { get; set; }
@@ -12,5 +14,6 @@
         public DateTime? DeliveredDate { get; set; }
         public DateTime? ReturnDate { get; set; }
         public bool IsTaken { get; set; } = false;
+        public bool IsDeleted { get; set; }
     }
 }

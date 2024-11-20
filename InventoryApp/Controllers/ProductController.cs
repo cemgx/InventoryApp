@@ -27,22 +27,28 @@ namespace InventoryApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProducts()
         {
-            var types = await productRepository.GetAllAsync();
-            List<ProductResponseDto> productResponseDto = mapper.Map<List<ProductResponseDto>>(types.OrderBy(x => x.Name));
-            return Ok(productResponseDto);
+            var products = await productRepository.GetAllAsync();
+            if (products.IsNullOrEmpty())
+            {
+                return NotFound();
+            }
+
+            var orderByProducts = products.OrderBy(x => x.Name);
+            var result = mapper.Map<List<ProductResponseDto>>(orderByProducts);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
             var product = await productRepository.GetByProductIdAsync(id);
-            if (product == null)
+            if (product.IsNullOrEmpty())
             {
                 return NotFound();
             }
 
-            var productResponseDto = mapper.Map<List<ProductResponseDto>>(product);
-            return Ok(productResponseDto);
+            var result = mapper.Map<List<ProductResponseDto>>(product);
+            return Ok(result);
         }
 
         [HttpGet("search")]
@@ -54,8 +60,8 @@ namespace InventoryApp.Controllers
                 return NotFound("Bu isme sahip bir ürün bulunamadı.");
             }
 
-            var productResponseDtos = mapper.Map<List<ProductResponseDto>>(products);
-            return Ok(productResponseDtos);
+            var result = mapper.Map<List<ProductResponseDto>>(products);
+            return Ok(result);
         }
 
         [HttpGet("purchaseDateGet")]
@@ -67,23 +73,34 @@ namespace InventoryApp.Controllers
             }
 
             var products = await productRepository.GetByInvoicePurchaseDateAsync(startDate, endDate);
-
-            if (products.Count == 0)
+            if (products.IsNullOrEmpty())
             {
                 return NotFound($"Belirtilen {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
             }
 
-            var productsResponseDto = mapper.Map<List<ProductResponseDto>>(products);
+            var result = mapper.Map<List<ProductResponseDto>>(products);
+            return Ok(result);
+        }
 
-            return Ok(productsResponseDto);
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var products = await productRepository.GetAllIncludingDeletedAsync();
+            if (products.IsNullOrEmpty())
+            {
+                return NotFound();
+            }
+
+            var orderByProducts = products.OrderBy(x => x.Name);
+            var result = mapper.Map<List<ProductResponseDto>>(orderByProducts);
+            return Ok(result);
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProduct([FromBody] ProductRequestDto productRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var matchedProductType = await typeRepository.GetByIdAsync(productRequestDto.ProductTypeId);
             if (matchedProductType == null)
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
@@ -95,17 +112,16 @@ namespace InventoryApp.Controllers
             var product = mapper.Map<Product>(productRequestDto);
 
             await productRepository.CreateAsync(product);
-            var createdProductDto = mapper.Map<ProductRequestDto>(product);
 
+            var createdProductDto = mapper.Map<ProductRequestDto>(product);
             return Created("", createdProductDto);
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDto productRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var product = await productRepository.GetByIdAsync(id);
             if (product == null)
                 return NotFound();
@@ -132,9 +148,9 @@ namespace InventoryApp.Controllers
             if (product == null)
                 return NotFound($"Id = {id} bulunamadı.");
 
-            await productRepository.RemoveAsync(product);
+            await productRepository.SoftDeleteAsync(product);
 
-            return NoContent();
+            return Ok($"{id} numaralı Product başarıyla kaldırıldı.");
         }
     }
 }

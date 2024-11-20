@@ -5,6 +5,7 @@ using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Linq;
 
 namespace InventoryApp.Controllers
@@ -26,53 +27,61 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetEmployees()
         {
             var employees = await repository.GetAllAsync();
-
-            if (employees == null)
+            if (employees.IsNullOrEmpty())
             {
                 return NotFound();
             }
-            List<EmployeeResponseDto> employeeResponseDto = mapper.Map<List<EmployeeResponseDto>>(employees.OrderBy(x => x.Name));
 
-            return Ok(employeeResponseDto);
+            var orderByEmployees = employees.OrderBy(x => x.Name);
+            var result = mapper.Map<List<EmployeeResponseDto>>(orderByEmployees);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEmployee(int id)
         {
             var employee = await repository.GetByEmployeeIdAsync(id);
-            if (employee == null)
+            if (employee.IsNullOrEmpty())
             {
                 return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
-            var employeeResponseDto = mapper.Map<List<EmployeeResponseDto>>(employee);
-            return Ok(employeeResponseDto);
+            var result = mapper.Map<List<EmployeeResponseDto>>(employee);
+            return Ok(result);
         }
 
         [HttpGet("search")]
         public async Task<IActionResult> GetEmployeesByName([FromQuery] string name)
         {
             var employees = await repository.GetByNameAsync(name);
-
-            if (employees.Count == 0)
+            if (employees.IsNullOrEmpty())
             {
                 return NotFound("Bu isme sahip Employee yok.");
             }
 
-            List<EmployeeResponseDto> employeeResponseDto = mapper.Map<List<EmployeeResponseDto>>(employees);
-
-            return Ok(employeeResponseDto);
+            var result = mapper.Map<List<EmployeeResponseDto>>(employees);
+            return Ok(result);
         }
 
-
-        [HttpPost]
-        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto)
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllEmployees()
         {
-            if (!ModelState.IsValid)
+            var employees = await repository.GetAllIncludingDeletedAsync();
+            if (employees.IsNullOrEmpty())
             {
-                return BadRequest(ModelState);
+                return NotFound();
             }
 
+            var orderByEmployees = employees.OrderBy(x => x.Name);
+            var result = mapper.Map<List<EmployeeResponseDto>>(orderByEmployees);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto)
+        {
             var employee = mapper.Map<Employee>(employeeRequestDto);
             await repository.CreateAsync(employee);
 
@@ -81,13 +90,10 @@ namespace InventoryApp.Controllers
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeRequestDto employeeRequestDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var existingEmployee = await repository.GetByIdAsync(id);
             if (existingEmployee == null)
             {
@@ -110,9 +116,9 @@ namespace InventoryApp.Controllers
                 return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
-            await repository.RemoveAsync(employee);
+            await repository.SoftDeleteAsync(employee);
 
-            return Ok($"{id} numaralı Employee başarıyla silindi.");
+            return Ok($"{id} numaralı Employee başarıyla kaldırıldı.");
         }
     }
 }

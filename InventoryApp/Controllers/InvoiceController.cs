@@ -27,36 +27,37 @@ namespace InventoryApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetInvoices()
         {
-            var types = await repository.GetAllAsync();
-            List<InvoiceResponseDto> invoiceResponseDto = mapper.Map<List<InvoiceResponseDto>>(types);
-            return Ok(invoiceResponseDto);
+            var invoices = await repository.GetAllAsync();
+
+            var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInvoice(int id)
         {
             var invoice = await repository.GetByInvoiceIdAsync(id);
-            if (invoice == null)
+            if (invoice.IsNullOrEmpty())
             {
                 return NotFound();
             }
 
-            var invoiceResponseDto = mapper.Map<List<InvoiceResponseDto>>(invoice);
-            return Ok(invoiceResponseDto);
+            var result = mapper.Map<List<InvoiceResponseDto>>(invoice);
+            return Ok(result);
         }
 
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name)
         {
             var invoices = await repository.GetByFirmNameAsync(name);
-            if (invoices.Count == 0)
+            if (invoices.IsNullOrEmpty())
             {
                 return NotFound("Bu isme sahip firma yok.");
             }
 
-            List<InvoiceResponseDto> invoicesResponseDto = mapper.Map<List<InvoiceResponseDto>>(invoices);
+            var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
 
-            return Ok(invoicesResponseDto);
+            return Ok(result);
         }
 
         [HttpGet("{invoiceId}/products")]
@@ -72,32 +73,37 @@ namespace InventoryApp.Controllers
             return Ok(productIds);
         }
 
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllInvoices()
+        {
+            var invoices = await repository.GetAllIncludingDeletedAsync();
+
+            var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
+            return Ok(result);
+        }
+
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var invoice = mapper.Map<Invoice>(invoiceRequestDto);
 
             await repository.CreateAsync(invoice);
 
-            var createdInvoiceDto = mapper.Map<InvoiceRequestDto>(invoice);
-            return Created("", createdInvoiceDto);
+            var result = mapper.Map<InvoiceRequestDto>(invoice);
+            return Created("", result);
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceRequestDto invoiceRequestDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var invoice = await repository.GetByIdAsync(id);
             if (invoice == null)
-                return NotFound("{id} numaralı Id ile eşleşen bir Invoice bulunamadı.");
+                return NotFound("{id} numaralı Invoice bulunamadı.");
 
             mapper.Map(invoiceRequestDto, invoice);
 
@@ -113,9 +119,9 @@ namespace InventoryApp.Controllers
             if (invoice == null)
                 return NotFound();
 
-            await repository.RemoveAsync(invoice);
+            await repository.SoftDeleteAsync(invoice);
 
-            return NoContent();
+            return Ok($"{id} numaralı Invoice başarıyla kaldırıldı.");
         }
     }
 }

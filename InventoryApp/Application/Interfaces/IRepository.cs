@@ -7,16 +7,18 @@ namespace InventoryApp.Application.Interfaces
     {
         Task<List<T>> GetAllAsync();
 
-        Task<T?> GetByIdAsync(object id);
+        Task<T> GetByIdAsync(object id);
 
-        Task<T?> GetByFilterAsync(Expression<Func<T, bool>> filter);
+        Task<T> GetByFilterAsync(Expression<Func<T, bool>> filter);
 
         Task CreateAsync(T entity);
 
         Task UpdateAsync(T entity);
 
-        Task RemoveAsync(T entity);
-
         Task<List<T>> GetByNameAsync(string name);
+
+        Task SoftDeleteAsync(T entity);
+
+        Task<List<T>> GetAllIncludingDeletedAsync();
     }
 }
