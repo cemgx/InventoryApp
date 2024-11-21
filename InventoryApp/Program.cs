@@ -31,7 +31,13 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>))
                 .AddScoped<IInventoryRepository, InventoryRepository>()
                 .AddScoped<IProductRepository, ProductRepository>()
                 .AddScoped<IProductTypeRepository, ProductTypeRepository>();
+builder.Services.AddAuthentication("EmployeeCookie")
+    .AddCookie("EmployeeCookie", options =>
+    {
+        options.LoginPath = "/employee/login";
+    });
 
+builder.Services.AddAuthorization();
 
 
 var app = builder.Build();
@@ -44,6 +50,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

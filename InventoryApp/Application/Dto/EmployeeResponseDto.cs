@@ -11,5 +11,6 @@ namespace InventoryApp.Application.Dto
 
         [EmailAddress(ErrorMessage = "Geçerli bir mail adresi giriniz.")]
         public string Email { get; set; }
+        public string Password { get; set; }
     }
 }
