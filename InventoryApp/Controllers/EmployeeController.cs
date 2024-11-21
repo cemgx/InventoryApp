@@ -112,16 +112,12 @@ namespace InventoryApp.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, name),
+                new(ClaimTypes.Name, name)
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, "EmployeeCookie");
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = false,
-            };
 
-            await HttpContext.SignInAsync("EmployeeCookie", new ClaimsPrincipal(claimsIdentity), authProperties);
+            await HttpContext.SignInAsync("EmployeeCookie", new ClaimsPrincipal(claimsIdentity));
 
             return Ok("Başarıyla giriş yaptınız.");
         }
