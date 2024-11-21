@@ -91,7 +91,7 @@ namespace InventoryApp.Controllers
 
             await repository.UpdateAsync(existingProductType, cancellationToken);
 
-            var result = mapper.Map<ProductTypeRequestDto>(existingProductType);
+            var result = mapper.Map<ProductTypeResponseDto>(existingProductType);
             return Ok(result);
         }
 

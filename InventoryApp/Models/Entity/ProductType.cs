@@ -2,11 +2,9 @@
 
 namespace InventoryApp.Models.Entity
 {
-    public class ProductType : ISoftDelete
+    public class ProductType : BaseEntity
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public List<Product>? Products { get; set; }
-        public bool IsDeleted { get; set; }
     }
 }

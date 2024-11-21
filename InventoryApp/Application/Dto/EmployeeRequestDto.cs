@@ -8,6 +8,6 @@ namespace InventoryApp.Application.Dto
         public string Name { get; set; }
 
         [EmailAddress(ErrorMessage = "Geçerli bir mail adresi giriniz.")]
-        public string Email { get; set; }
+        public required string Email { get; set; }
     }
 }

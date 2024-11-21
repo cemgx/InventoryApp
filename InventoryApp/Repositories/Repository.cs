@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace InventoryApp.Repositories
 {
-    public class Repository<T> : IRepository<T> where T : class, new()
+    public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         protected readonly InventoryAppDbContext context;
 
@@ -36,11 +36,11 @@ namespace InventoryApp.Repositories
                         .SingleOrDefaultAsync(filter);
         }
 
-        public async Task<T> GetByIdAsync(object id, CancellationToken cancellationToken)
+        public async Task<T> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await ApplySoftDeleteFilter(context.Set<T>())
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(e => EF.Property<object>(e, "Id") == id, cancellationToken);
+                        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
         public async Task<List<T>> GetByNameAsync(string name, CancellationToken cancellationToken)
@@ -66,7 +66,7 @@ namespace InventoryApp.Repositories
 
         public async Task SoftDeleteAsync(T entity, CancellationToken cancellationToken)
         {
-            if (entity is ISoftDelete softDelete)
+            if (entity is BaseEntity softDelete)
             {
                 softDelete.IsDeleted = true;
                 await UpdateAsync(entity, cancellationToken);
@@ -75,8 +75,8 @@ namespace InventoryApp.Repositories
 
         private IQueryable<T> ApplySoftDeleteFilter(IQueryable<T> query)
         {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T))
-                ? query.Where(e => EF.Property<bool>(e, "IsDeleted") == false)
+            return typeof(BaseEntity).IsAssignableFrom(typeof(T))
+                ? query.Where(x => x.IsDeleted == false)
                 : query;
         }
     }

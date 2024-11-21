@@ -70,7 +70,7 @@ namespace InventoryApp.Controllers
                 return NotFound($"{invoiceId} id numaralı fatura ile ilişkilendirilmiş bir ürün bulunamadı.");
             }
 
-            return Ok(productIds, cancellationToken);
+            return Ok(productIds);
         }
 
         [HttpGet("all")]
@@ -92,7 +92,7 @@ namespace InventoryApp.Controllers
 
             await repository.CreateAsync(invoice, cancellationToken);
 
-            var result = mapper.Map<InvoiceRequestDto>(invoice);
+            var result = mapper.Map<InvoiceResponseDto>(invoice);
             return Created("", result);
         }
 

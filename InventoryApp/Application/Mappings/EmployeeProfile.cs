@@ -8,9 +8,9 @@ namespace InventoryApp.Application.Mappings
     {
         public EmployeeProfile()
         {
-            this.CreateMap<Employee, EmployeeResponseDto>().ReverseMap();
+            this.CreateMap<Employee, EmployeeResponseDto>();
 
-            this.CreateMap<Employee, EmployeeRequestDto>().ReverseMap();
+            this.CreateMap<EmployeeRequestDto, Employee>();
         }
     }
 }

@@ -113,8 +113,8 @@ namespace InventoryApp.Controllers
 
             await productRepository.CreateAsync(product, cancellationToken);
 
-            var createdProductDto = mapper.Map<ProductRequestDto>(product);
-            return Created("", createdProductDto);
+            var result = mapper.Map<ProductResponseDto>(product);
+            return Created("", result);
         }
 
         [HttpPut("{id}")]

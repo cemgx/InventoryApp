@@ -102,7 +102,7 @@ namespace InventoryApp.Controllers
             inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
 
             await inventoryRepository.CreateAsync(inventory, cancellationToken);
-            var result = mapper.Map<InventoryRequestDto>(inventory);
+            var result = mapper.Map<InventoryResponseDto>(inventory);
 
             return Created("", result);
         }

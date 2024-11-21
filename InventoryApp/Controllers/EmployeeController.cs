@@ -85,7 +85,7 @@ namespace InventoryApp.Controllers
             var employee = mapper.Map<Employee>(employeeRequestDto);
             await repository.CreateAsync(employee, cancellationToken);
 
-            var result = mapper.Map<EmployeeRequestDto>(employee);
+            var result = mapper.Map<EmployeeResponseDto>(employee);
             return Created("", result);
         }
 
