@@ -88,13 +88,13 @@ namespace InventoryApp.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateEmployee([FromBody] EmployeeResponseDto employeeResponseDto, CancellationToken cancellationToken)
         {
-            var existingEmployee = await repository.GetByNameAsync(employeeRequestDto.Email, cancellationToken);
-            if (existingEmployee.IsNullOrEmpty())
-                return BadRequest("Bu maille zaten bir kullanıcı mevcut.");
+            var existingEmployee = await repository.GetByNameAsync(employeeResponseDto.Email, cancellationToken);
+            if (!existingEmployee.IsNullOrEmpty())
+                return NotFound("Bu maille zaten bir kullanıcı mevcut.");
 
-            var employee = mapper.Map<Employee>(employeeRequestDto);
+            var employee = mapper.Map<Employee>(employeeResponseDto);
             await repository.CreateAsync(employee, cancellationToken);
 
             var result = mapper.Map<EmployeeResponseDto>(employee);
