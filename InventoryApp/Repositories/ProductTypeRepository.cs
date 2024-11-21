@@ -12,12 +12,12 @@ namespace InventoryApp.Repositories
         {
         }
 
-        public async Task<List<ProductType>> GetByProductTypeIdAsync(int productTypeId)
+        public async Task<List<ProductType>> GetByProductTypeIdAsync(int productTypeId, CancellationToken cancellationToken)
         {
             return await this.context.Set<ProductType>()
                 .AsNoTracking()
                 .FilterById(i => i.Id, productTypeId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
     }
 }

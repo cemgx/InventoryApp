@@ -5,20 +5,20 @@ namespace InventoryApp.Application.Interfaces
 {
     public interface IRepository<T> where T : class, new()
     {
-        Task<List<T>> GetAllAsync();
+        Task<List<T>> GetAllAsync(CancellationToken cancellationToken);
 
-        Task<T> GetByIdAsync(object id);
+        Task<T> GetByIdAsync(object id, CancellationToken cancellationToken);
 
         Task<T> GetByFilterAsync(Expression<Func<T, bool>> filter);
 
-        Task CreateAsync(T entity);
+        Task CreateAsync(T entity, CancellationToken cancellationToken);
 
-        Task UpdateAsync(T entity);
+        Task UpdateAsync(T entity, CancellationToken cancellationToken);
 
-        Task<List<T>> GetByNameAsync(string name);
+        Task<List<T>> GetByNameAsync(string name, CancellationToken cancellationToken);
 
-        Task SoftDeleteAsync(T entity);
+        Task SoftDeleteAsync(T entity, CancellationToken cancellationToken);
 
-        Task<List<T>> GetAllIncludingDeletedAsync();
+        Task<List<T>> GetAllIncludingDeletedAsync(CancellationToken cancellationToken);
     }
 }

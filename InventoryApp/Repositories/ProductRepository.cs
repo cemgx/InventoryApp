@@ -14,28 +14,28 @@ namespace InventoryApp.Repositories
             this.context = context;
         }
 
-        public async Task<List<Product>> GetByProductIdAsync(int productId)
+        public async Task<List<Product>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
             return await this.context.Set<Product>()
                 .AsNoTracking()
                 .FilterById(i => i.Id, productId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<Product>> GetByInvoicePurchaseDateAsync(DateTime startDate, DateTime endDate)
+        public async Task<List<Product>> GetByInvoicePurchaseDateAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
         {
             return await this.context.Products
                 .AsNoTracking()
                 .FilterByInvoicePurchaseDate(startDate, endDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<int>> GetProductIdsByInvoiceIdAsync(int invoiceId)
+        public async Task<List<int>> GetProductIdsByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken)
         {
             return await this.context.Products
                 .AsNoTracking()
                 .FilterProductIdsByInvoiceId(invoiceId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
     }
 }

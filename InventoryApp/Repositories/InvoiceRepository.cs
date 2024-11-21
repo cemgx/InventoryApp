@@ -12,20 +12,20 @@ namespace InventoryApp.Repositories
         {
         }
 
-        public async Task<List<Invoice>> GetByInvoiceIdAsync(int invoiceId)
+        public async Task<List<Invoice>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken)
         {
             return await this.context.Set<Invoice>()
                 .AsNoTracking()
                 .FilterById(i => i.Id, invoiceId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<Invoice>> GetByFirmNameAsync(string name)
+        public async Task<List<Invoice>> GetByFirmNameAsync(string name, CancellationToken cancellationToken)
         {
             return await this.context.Set<Invoice>()
                 .AsNoTracking()
                 .FilterByProperty("FirmName", name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
     }
 }

@@ -16,17 +16,17 @@ namespace InventoryApp.Repositories
             this.context = context;
         }
 
-        public async Task CreateAsync(T entity)
+        public async Task CreateAsync(T entity, CancellationToken cancellationToken)
         {
             await this.context.Set<T>().AddAsync(entity);
-            await this.context.SaveChangesAsync();
+            await this.context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<List<T>> GetAllAsync()
+        public async Task<List<T>> GetAllAsync(CancellationToken cancellationToken)
         {
             return await ApplySoftDeleteFilter(context.Set<T>())
                         .AsNoTracking()
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
         }
 
         public async Task<T> GetByFilterAsync(Expression<Func<T, bool>> filter)
@@ -36,40 +36,40 @@ namespace InventoryApp.Repositories
                         .SingleOrDefaultAsync(filter);
         }
 
-        public async Task<T> GetByIdAsync(object id)
+        public async Task<T> GetByIdAsync(object id, CancellationToken cancellationToken)
         {
             return await ApplySoftDeleteFilter(context.Set<T>())
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(e => EF.Property<object>(e, "Id") == id);
+                        .FirstOrDefaultAsync(e => EF.Property<object>(e, "Id") == id, cancellationToken);
         }
 
-        public async Task<List<T>> GetByNameAsync(string name)
+        public async Task<List<T>> GetByNameAsync(string name, CancellationToken cancellationToken)
         {
             return await ApplySoftDeleteFilter(context.Set<T>())
                          .AsNoTracking()
                          .FilterByName(name)
-                         .ToListAsync();
+                         .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<T>> GetAllIncludingDeletedAsync()
+        public async Task<List<T>> GetAllIncludingDeletedAsync(CancellationToken cancellationToken)
         {
             return await context.Set<T>()
                          .AsNoTracking()
-                         .ToListAsync();
+                         .ToListAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(T entity)
+        public async Task UpdateAsync(T entity, CancellationToken cancellationToken)
         {
             this.context.Set<T>().Update(entity);
-            await this.context.SaveChangesAsync();
+            await this.context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task SoftDeleteAsync(T entity)
+        public async Task SoftDeleteAsync(T entity, CancellationToken cancellationToken)
         {
             if (entity is ISoftDelete softDelete)
             {
                 softDelete.IsDeleted = true;
-                await UpdateAsync(entity);
+                await UpdateAsync(entity, cancellationToken);
             }
         }
 

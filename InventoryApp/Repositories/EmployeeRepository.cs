@@ -13,12 +13,12 @@ namespace InventoryApp.Repositories
         {
         }
 
-        public async Task<List<Employee>> GetByEmployeeIdAsync(int employeeId)
+        public async Task<List<Employee>> GetByEmployeeIdAsync(int employeeId, CancellationToken cancellationToken)
         {
             return await this.context.Set<Employee>()
                 .AsNoTracking()
                 .FilterById(e => e.Id, employeeId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
     }
 }

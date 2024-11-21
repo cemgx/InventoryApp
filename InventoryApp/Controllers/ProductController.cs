@@ -25,9 +25,9 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts(CancellationToken cancellationToken)
         {
-            var products = await productRepository.GetAllAsync();
+            var products = await productRepository.GetAllAsync(cancellationToken);
             if (products.IsNullOrEmpty())
             {
                 return NotFound();
@@ -39,9 +39,9 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProduct(int id)
+        public async Task<IActionResult> GetProduct(int id, CancellationToken cancellationToken)
         {
-            var product = await productRepository.GetByProductIdAsync(id);
+            var product = await productRepository.GetByProductIdAsync(id, cancellationToken);
             if (product.IsNullOrEmpty())
             {
                 return NotFound();
@@ -52,9 +52,9 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchProducts([FromQuery] string name)
+        public async Task<IActionResult> SearchProducts([FromQuery] string name, CancellationToken cancellationToken)
         {
-            var products = await productRepository.GetByNameAsync(name);
+            var products = await productRepository.GetByNameAsync(name, cancellationToken);
             if (products.IsNullOrEmpty())
             {
                 return NotFound("Bu isme sahip bir ürün bulunamadı.");
@@ -65,14 +65,14 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet("purchaseDateGet")]
-        public async Task<IActionResult> GetProductsByInvoicePurchaseDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public async Task<IActionResult> GetProductsByInvoicePurchaseDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, CancellationToken cancellationToken)
         {
             if (startDate > endDate)
             {
                 return BadRequest("Başlangıç tarihi, bitiş tarihinden büyük olamaz.");
             }
 
-            var products = await productRepository.GetByInvoicePurchaseDateAsync(startDate, endDate);
+            var products = await productRepository.GetByInvoicePurchaseDateAsync(startDate, endDate, cancellationToken);
             if (products.IsNullOrEmpty())
             {
                 return NotFound($"Belirtilen {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
@@ -83,9 +83,9 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetAllProducts(CancellationToken cancellationToken)
         {
-            var products = await productRepository.GetAllIncludingDeletedAsync();
+            var products = await productRepository.GetAllIncludingDeletedAsync(cancellationToken);
             if (products.IsNullOrEmpty())
             {
                 return NotFound();
@@ -99,19 +99,19 @@ namespace InventoryApp.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateProduct([FromBody] ProductRequestDto productRequestDto)
+        public async Task<IActionResult> CreateProduct([FromBody] ProductRequestDto productRequestDto, CancellationToken cancellationToken)
         {
-            var matchedProductType = await typeRepository.GetByIdAsync(productRequestDto.ProductTypeId);
+            var matchedProductType = await typeRepository.GetByIdAsync(productRequestDto.ProductTypeId, cancellationToken);
             if (matchedProductType == null)
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
 
-            var matchedInvoice = await invoiceRepository.GetByIdAsync(productRequestDto.InvoiceId);
+            var matchedInvoice = await invoiceRepository.GetByIdAsync(productRequestDto.InvoiceId, cancellationToken);
             if (matchedInvoice == null)
                 return BadRequest("Geçersiz bir InvoiceId girdiniz.");
 
             var product = mapper.Map<Product>(productRequestDto);
 
-            await productRepository.CreateAsync(product);
+            await productRepository.CreateAsync(product, cancellationToken);
 
             var createdProductDto = mapper.Map<ProductRequestDto>(product);
             return Created("", createdProductDto);
@@ -120,35 +120,35 @@ namespace InventoryApp.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDto productRequestDto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDto productRequestDto, CancellationToken cancellationToken)
         {
-            var product = await productRepository.GetByIdAsync(id);
+            var product = await productRepository.GetByIdAsync(id, cancellationToken);
             if (product == null)
                 return NotFound();
 
-            var matchedProductType = await typeRepository.GetByIdAsync(productRequestDto.ProductTypeId);
+            var matchedProductType = await typeRepository.GetByIdAsync(productRequestDto.ProductTypeId, cancellationToken);
             if (matchedProductType == null)
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
 
-            var matchedInvoice = await invoiceRepository.GetByIdAsync(productRequestDto.InvoiceId);
+            var matchedInvoice = await invoiceRepository.GetByIdAsync(productRequestDto.InvoiceId, cancellationToken);
             if (matchedInvoice == null)
                 return BadRequest("Geçersiz bir InvoiceId girdiniz.");
 
             mapper.Map(productRequestDto, product);
 
-            await productRepository.UpdateAsync(product);
+            await productRepository.UpdateAsync(product, cancellationToken);
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        public async Task<IActionResult> DeleteProduct(int id, CancellationToken cancellationToken)
         {
-            var product = await productRepository.GetByIdAsync(id);
+            var product = await productRepository.GetByIdAsync(id, cancellationToken);
             if (product == null)
                 return NotFound($"Id = {id} bulunamadı.");
 
-            await productRepository.SoftDeleteAsync(product);
+            await productRepository.SoftDeleteAsync(product, cancellationToken);
 
             return Ok($"{id} numaralı Product başarıyla kaldırıldı.");
         }

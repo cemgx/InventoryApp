@@ -25,18 +25,18 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetInvoices()
+        public async Task<IActionResult> GetInvoices(CancellationToken cancellationToken)
         {
-            var invoices = await repository.GetAllAsync();
+            var invoices = await repository.GetAllAsync(cancellationToken);
 
             var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetInvoice(int id)
+        public async Task<IActionResult> GetInvoice(int id, CancellationToken cancellationToken)
         {
-            var invoice = await repository.GetByInvoiceIdAsync(id);
+            var invoice = await repository.GetByInvoiceIdAsync(id, cancellationToken);
             if (invoice.IsNullOrEmpty())
             {
                 return NotFound();
@@ -47,9 +47,9 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet("Firma Adı")]
-        public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name)
+        public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name, CancellationToken cancellationToken)
         {
-            var invoices = await repository.GetByFirmNameAsync(name);
+            var invoices = await repository.GetByFirmNameAsync(name, cancellationToken);
             if (invoices.IsNullOrEmpty())
             {
                 return NotFound("Bu isme sahip firma yok.");
@@ -61,22 +61,22 @@ namespace InventoryApp.Controllers
         }
 
         [HttpGet("{invoiceId}/products")]
-        public async Task<IActionResult> GetProductsByInvoiceId(int invoiceId)
+        public async Task<IActionResult> GetProductsByInvoiceId(int invoiceId, CancellationToken cancellationToken)
         {
-            var productIds = await productRepository.GetProductIdsByInvoiceIdAsync(invoiceId);
+            var productIds = await productRepository.GetProductIdsByInvoiceIdAsync(invoiceId, cancellationToken);
 
             if (productIds.IsNullOrEmpty())
             {
                 return NotFound($"{invoiceId} id numaralı fatura ile ilişkilendirilmiş bir ürün bulunamadı.");
             }
 
-            return Ok(productIds);
+            return Ok(productIds, cancellationToken);
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllInvoices()
+        public async Task<IActionResult> GetAllInvoices(CancellationToken cancellationToken)
         {
-            var invoices = await repository.GetAllIncludingDeletedAsync();
+            var invoices = await repository.GetAllIncludingDeletedAsync(cancellationToken);
 
             var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
             return Ok(result);
@@ -86,11 +86,11 @@ namespace InventoryApp.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto)
+        public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto, CancellationToken cancellationToken)
         {
             var invoice = mapper.Map<Invoice>(invoiceRequestDto);
 
-            await repository.CreateAsync(invoice);
+            await repository.CreateAsync(invoice, cancellationToken);
 
             var result = mapper.Map<InvoiceRequestDto>(invoice);
             return Created("", result);
@@ -99,27 +99,27 @@ namespace InventoryApp.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceRequestDto invoiceRequestDto)
+        public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceRequestDto invoiceRequestDto, CancellationToken cancellationToken)
         {
-            var invoice = await repository.GetByIdAsync(id);
+            var invoice = await repository.GetByIdAsync(id, cancellationToken);
             if (invoice == null)
                 return NotFound("{id} numaralı Invoice bulunamadı.");
 
             mapper.Map(invoiceRequestDto, invoice);
 
-            await repository.UpdateAsync(invoice);
+            await repository.UpdateAsync(invoice, cancellationToken);
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteInvoice(int id)
+        public async Task<IActionResult> DeleteInvoice(int id, CancellationToken cancellationToken)
         {
-            var invoice = await repository.GetByIdAsync(id);
+            var invoice = await repository.GetByIdAsync(id, cancellationToken);
             if (invoice == null)
                 return NotFound();
 
-            await repository.SoftDeleteAsync(invoice);
+            await repository.SoftDeleteAsync(invoice, cancellationToken);
 
             return Ok($"{id} numaralı Invoice başarıyla kaldırıldı.");
         }

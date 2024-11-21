@@ -14,27 +14,27 @@ namespace InventoryApp.Repositories
         {
             this.context = context;
         }
-        public async Task<Inventory> GetByProductIdWithIsTakenAsync(int productId)
+        public async Task<Inventory> GetByProductIdWithIsTakenAsync(int productId, CancellationToken cancellationToken)
         {
             return await this.context.Set<Inventory>()
                 .FilterByProductIdWithIsTaken(productId)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
         }
-        public async Task<List<Inventory>> GetByProductIdAsync(int productId)
+        public async Task<List<Inventory>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
             return await this.context.Set<Inventory>()
                 .AsNoTracking()
                 .FilterByProductId(productId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
-        public async Task<List<Inventory>> GetByDeliveredDateAsync(DateTime startDate, DateTime endDate)
+        public async Task<List<Inventory>> GetByDeliveredDateAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
         {
             return await this.context.Set<Inventory>()
                 .AsNoTracking()
                 .FilterByDeliveredDate(startDate, endDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
-        public async Task UpdateReturnDateAsync(int id, DateTime? returnDate)
+        public async Task UpdateReturnDateAsync(int id, DateTime? returnDate, CancellationToken cancellationToken)
         {
             var inventory = await context.Inventories.FindAsync(id);
             if (inventory != null)
@@ -43,7 +43,7 @@ namespace InventoryApp.Repositories
 
                 inventory.IsTaken = inventory.DeliveredDate.HasValue && !returnDate.HasValue;
 
-                await context.SaveChangesAsync();
+                await context.SaveChangesAsync(cancellationToken);
             }
         }
 

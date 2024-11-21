@@ -4,9 +4,9 @@ namespace InventoryApp.Application.Interfaces
 {
     public interface IInventoryRepository : IRepository<Inventory>
     {
-        Task<Inventory> GetByProductIdWithIsTakenAsync(int productId);
-        Task<List<Inventory>> GetByProductIdAsync(int productId);
-        Task<List<Inventory>> GetByDeliveredDateAsync(DateTime startDate, DateTime endDate);
-        Task UpdateReturnDateAsync(int id, DateTime? returnDate);
+        Task<Inventory> GetByProductIdWithIsTakenAsync(int productId, CancellationToken cancellationToken);
+        Task<List<Inventory>> GetByProductIdAsync(int productId, CancellationToken cancellationToken);
+        Task<List<Inventory>> GetByDeliveredDateAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
+        Task UpdateReturnDateAsync(int id, DateTime? returnDate, CancellationToken cancellationToken);
     }
 }
