@@ -20,5 +20,12 @@ namespace InventoryApp.Repositories
                 .FilterById(e => e.Id, employeeId)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<Employee> GetByMailAsync(string mail, CancellationToken cancellationToken)
+        {
+            return await context.Employees
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Email == mail, cancellationToken);
+        }
     }
 }

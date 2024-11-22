@@ -2,13 +2,13 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Entity;
-using InventoryApp.Repositories;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class InvoiceController : ControllerBase

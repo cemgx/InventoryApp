@@ -1,8 +1,10 @@
 using AutoMapper;
+using InventoryApp.Application.Hash;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Application.Mappings;
 using InventoryApp.Models.Context;
 using InventoryApp.Repositories;
+using Microsoft.AspNet.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,11 +32,15 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>))
                 .AddScoped<IEmployeeRepository, EmployeeRepository>()
                 .AddScoped<IInventoryRepository, InventoryRepository>()
                 .AddScoped<IProductRepository, ProductRepository>()
-                .AddScoped<IProductTypeRepository, ProductTypeRepository>();
+                .AddScoped<IProductTypeRepository, ProductTypeRepository>()
+                .AddScoped<InventoryApp.Application.Hash.PasswordHasher>();
+
 builder.Services.AddAuthentication("EmployeeCookie")
     .AddCookie("EmployeeCookie", options =>
     {
-        options.LoginPath = "/employee/login";
+        options.Cookie.Name = "EmployeeAuthCookie";
+        options.LoginPath = "/api/Auth/login";
+        options.LogoutPath = "/api/Auth/logout";
     });
 
 builder.Services.AddAuthorization();
