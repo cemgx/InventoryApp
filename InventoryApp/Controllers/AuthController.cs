@@ -55,7 +55,7 @@ namespace InventoryApp.Controllers
             return Ok("Başarıyla giriş yaptınız.");
         }
 
-        [HttpPost("ChangePassword")]
+        [HttpPut("ChangePassword")]
         public async Task<IActionResult> ChangePassword([FromBody] PasswordRequestDto passwordRequestDto, CancellationToken cancellationToken)
         {
             var employee = await repository.GetByMailAsync(passwordRequestDto.Email, cancellationToken);
@@ -73,10 +73,56 @@ namespace InventoryApp.Controllers
 
             if (passwordRequestDto.NewPassword != passwordRequestDto.NewPassword2)
             {
-                return BadRequest("Yeni şifreler uyuşmuyor.");
+                return BadRequest("New passwords don't match");
             }
 
             var (hashedPassword, salt) = passwordHasher.HashPassword(passwordRequestDto.NewPassword);
+
+            employee.Password = hashedPassword;
+            employee.Salt = salt;
+
+            await repository.UpdateAsync(employee, cancellationToken);
+
+            return Ok("Başarıyla şifrenizi değiştirdiniz.");
+        }
+
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPasswordCode([FromBody] ForgotPasswordRequestDto forgotPasswordRequestdto, CancellationToken cancellationToken)
+        {
+            var employee = await repository.GetByMailAsync(forgotPasswordRequestdto.Email, cancellationToken);
+            if (employee == null)
+            {
+                return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
+            }
+
+            var randomCode = repository.GenerateRandomString(6);
+            employee.ForgetCode = randomCode;
+            await repository.UpdateAsync(employee, cancellationToken);
+
+            return Ok($"Hesabınızı kurtarma şifreniz = {randomCode}");
+        }
+
+        [HttpPut("ForgotPasswordChange")]
+        public async Task<IActionResult> ForgotPasswordChange([FromBody] ForgotPasswordResponseDto forgotPasswordResponseDto, CancellationToken cancellationToken)
+        {
+            var employee = await repository.GetByMailAsync(forgotPasswordResponseDto.Email, cancellationToken);
+            if (employee == null)
+            {
+                return Unauthorized("Geçersiz mail");
+            }
+
+            var code = await repository.GetByForgotCodeAsync(forgotPasswordResponseDto.ForgotCode, cancellationToken);
+            if (code == null)
+            {
+                return Unauthorized("Kod yanlış");
+            }
+
+            if (forgotPasswordResponseDto.NewPassword != forgotPasswordResponseDto.NewPassword2)
+            {
+                return BadRequest("New passwords don't match");
+            }
+
+            var (hashedPassword, salt) = passwordHasher.HashPassword(forgotPasswordResponseDto.NewPassword);
 
             employee.Password = hashedPassword;
             employee.Salt = salt;

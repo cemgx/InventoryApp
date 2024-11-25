@@ -8,6 +8,7 @@ namespace InventoryApp.Models.Entity
         public string Email { get; set; }
         public string Password { get; set; }
         public string Salt { get; set; }
+        public string? ForgetCode { get; set; }
         public List<Inventory> InventoriesGiven { get; set; }
         public List<Inventory> InventoriesReceived { get; set; }
     }
