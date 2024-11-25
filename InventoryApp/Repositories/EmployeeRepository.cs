@@ -28,15 +28,7 @@ namespace InventoryApp.Repositories
                 .SingleOrDefaultAsync(x => x.Email == mail, cancellationToken);
         }
 
-        public async Task<Employee> GetByForgotCodeAsync(string forgotCode, CancellationToken cancellationToken)
-        {
-            return await context.Employees
-                .AsNoTracking()
-                .SingleOrDefaultAsync(x => x.ForgetCode == forgotCode, cancellationToken);
-        }
-
         private const string Charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
         public string GenerateRandomString(int length)
         {
             return string.Create<object?>(length, null,

@@ -18,7 +18,6 @@ namespace InventoryApp.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IEmployeeRepository repository;
-        private readonly IMapper mapper;
         private readonly Application.Hash.PasswordHasher passwordHasher;
 
         public AuthController(IEmployeeRepository repository, Application.Hash.PasswordHasher passwordHasher)
@@ -43,10 +42,14 @@ namespace InventoryApp.Controllers
                 return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
             }
 
+            if (employee.IsVerified == false)
+            {
+                return NotFound("Mailiniz doğrulanmamış. Mailinizi doğrulayıp tekrar deneyin.");
+            }
+
             var claims = new List<Claim>
             {
                 new(ClaimTypes.Email, employee.Email),
-                new(ClaimTypes.NameIdentifier, employee.Id.ToString())
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, "EmployeeCookie");
@@ -55,25 +58,45 @@ namespace InventoryApp.Controllers
             return Ok("Başarıyla giriş yaptınız.");
         }
 
+        [HttpPut("MailVerification")]
+        public async Task<IActionResult> MailVerification([FromBody] MailVerificationRequestDto mailVerificationRequestDto, CancellationToken cancellationToken)
+        {
+            var employee = await repository.GetByMailAsync(mailVerificationRequestDto.Email, cancellationToken);
+            if (employee == null)
+            {
+                return Unauthorized("Geçersiz mail veya kod hatalı.");
+            }
+
+            if(employee.MailVerificationCode != mailVerificationRequestDto.VerificationCode)
+            {
+                return Unauthorized("Geçersiz mail veya kod hatalı.");
+            }
+
+            employee.IsVerified = true;
+            await repository.UpdateAsync(employee, cancellationToken);
+
+            return Ok("Başarıyla verifike oldunuz.");
+        }
+
+        [Authorize]
         [HttpPut("ChangePassword")]
         public async Task<IActionResult> ChangePassword([FromBody] PasswordRequestDto passwordRequestDto, CancellationToken cancellationToken)
         {
-            var employee = await repository.GetByMailAsync(passwordRequestDto.Email, cancellationToken);
+            var currentUserEmail = User.FindFirstValue(ClaimTypes.Email);
+            if (currentUserEmail == null)
+            {
+                return Unauthorized("sistemsel hata, lütfen daha sonra tekrar deneyin.");
+            }
+            var employee = await repository.GetByMailAsync(currentUserEmail, cancellationToken);
             if (employee == null)
             {
                 return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
             }
 
-            var passwordHasher = new Application.Hash.PasswordHasher();
             bool verified = passwordHasher.VerifyPassword(employee.Password, employee.Salt, passwordRequestDto.Password);
             if (verified == false)
             {
                 return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
-            }
-
-            if (passwordRequestDto.NewPassword != passwordRequestDto.NewPassword2)
-            {
-                return BadRequest("New passwords don't match");
             }
 
             var (hashedPassword, salt) = passwordHasher.HashPassword(passwordRequestDto.NewPassword);
@@ -92,11 +115,18 @@ namespace InventoryApp.Controllers
             var employee = await repository.GetByMailAsync(forgotPasswordRequestdto.Email, cancellationToken);
             if (employee == null)
             {
-                return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
+                return Unauthorized("Mailiniz doğruysa şifre kurtarma kodunuz mailinize gönderilmiştir.");
             }
 
             var randomCode = repository.GenerateRandomString(6);
-            employee.ForgetCode = randomCode;
+            //var code2 = repository.GenerateRandomString(6);
+
+            //if (randomCode == code2)
+            //{
+            //    return BadRequest("aynı oluşturmuyor.");
+            //}
+
+            employee.ForgotCode = randomCode;
             await repository.UpdateAsync(employee, cancellationToken);
 
             return Ok($"Hesabınızı kurtarma şifreniz = {randomCode}");
@@ -106,26 +136,22 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> ForgotPasswordChange([FromBody] ForgotPasswordResponseDto forgotPasswordResponseDto, CancellationToken cancellationToken)
         {
             var employee = await repository.GetByMailAsync(forgotPasswordResponseDto.Email, cancellationToken);
+            if (employee.ForgotCode != forgotPasswordResponseDto.ForgotCode)
+            {
+                return Unauthorized("Kod yanlış veya geçersiz.");
+            }
+
             if (employee == null)
             {
                 return Unauthorized("Geçersiz mail");
-            }
-
-            var code = await repository.GetByForgotCodeAsync(forgotPasswordResponseDto.ForgotCode, cancellationToken);
-            if (code == null)
-            {
-                return Unauthorized("Kod yanlış");
-            }
-
-            if (forgotPasswordResponseDto.NewPassword != forgotPasswordResponseDto.NewPassword2)
-            {
-                return BadRequest("New passwords don't match");
             }
 
             var (hashedPassword, salt) = passwordHasher.HashPassword(forgotPasswordResponseDto.NewPassword);
 
             employee.Password = hashedPassword;
             employee.Salt = salt;
+
+            employee.ForgotCode = null;
 
             await repository.UpdateAsync(employee, cancellationToken);
 

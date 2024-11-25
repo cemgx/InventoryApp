@@ -97,10 +97,13 @@ namespace InventoryApp.Controllers
             employee.Password = hashedPassword;
             employee.Salt = salt;
 
+            var randomCode = repository.GenerateRandomString(6);
+            employee.MailVerificationCode = randomCode;
+
             await repository.CreateAsync(employee, cancellationToken);
             
             var result = mapper.Map<EmployeeResponseDto>(employee);
-            return Created("", result);
+            return Created($"Hesabınız başarıyla oluşturuldu. Giriş yapabilmek için mailinizi {randomCode} ile onaylamanız gerekmektedir. Kullanıcı bilgileriniz ise aşağıdadır.", result);
         }
 
         [HttpPut("{id}")]
