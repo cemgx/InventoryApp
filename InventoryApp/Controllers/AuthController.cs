@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using AutoMapper;
+using InventoryApp.Models.Entity;
 
 namespace InventoryApp.Controllers
 {
@@ -16,6 +18,7 @@ namespace InventoryApp.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IEmployeeRepository repository;
+        private readonly IMapper mapper;
         private readonly Application.Hash.PasswordHasher passwordHasher;
 
         public AuthController(IEmployeeRepository repository, Application.Hash.PasswordHasher passwordHasher)
@@ -33,7 +36,6 @@ namespace InventoryApp.Controllers
                 return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
             }
 
-            //var passwordHasher = new Application.Hash.PasswordHasher();
             bool verified = passwordHasher.VerifyPassword(employee.Password, employee.Salt, loginRequestDto.Password);
 
             if (verified == false)
@@ -51,6 +53,37 @@ namespace InventoryApp.Controllers
             await HttpContext.SignInAsync("EmployeeCookie", new ClaimsPrincipal(claimsIdentity));
 
             return Ok("Başarıyla giriş yaptınız.");
+        }
+
+        [HttpPost("ChangePassword")]
+        public async Task<IActionResult> ChangePassword([FromBody] PasswordRequestDto passwordRequestDto, CancellationToken cancellationToken)
+        {
+            var employee = await repository.GetByMailAsync(passwordRequestDto.Email, cancellationToken);
+            if (employee == null)
+            {
+                return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
+            }
+
+            var passwordHasher = new Application.Hash.PasswordHasher();
+            bool verified = passwordHasher.VerifyPassword(employee.Password, employee.Salt, passwordRequestDto.Password);
+            if (verified == false)
+            {
+                return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
+            }
+
+            if (passwordRequestDto.NewPassword != passwordRequestDto.NewPassword2)
+            {
+                return BadRequest("Yeni şifreler uyuşmuyor.");
+            }
+
+            var (hashedPassword, salt) = passwordHasher.HashPassword(passwordRequestDto.NewPassword);
+
+            employee.Password = hashedPassword;
+            employee.Salt = salt;
+
+            await repository.UpdateAsync(employee, cancellationToken);
+
+            return Ok("Başarıyla şifrenizi değiştirdiniz.");
         }
 
         [Authorize]

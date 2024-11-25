@@ -14,7 +14,6 @@ using System.Security.Claims;
 
 namespace InventoryApp.Controllers
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class EmployeeController : ControllerBase
