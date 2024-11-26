@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using AutoMapper;
 using InventoryApp.Models.Entity;
+using InventoryApp.Application.Utility;
 
 namespace InventoryApp.Controllers
 {
@@ -29,6 +30,8 @@ namespace InventoryApp.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto, CancellationToken cancellationToken)
         {
+            loginRequestDto = AntiXssUtility.EncodeDto(loginRequestDto);
+
             var employee = await repository.GetByMailAsync(loginRequestDto.Email, cancellationToken);
             if (employee == null)
             {
@@ -61,6 +64,8 @@ namespace InventoryApp.Controllers
         [HttpPut("MailVerification")]
         public async Task<IActionResult> MailVerification([FromBody] MailVerificationRequestDto mailVerificationRequestDto, CancellationToken cancellationToken)
         {
+            mailVerificationRequestDto = AntiXssUtility.EncodeDto(mailVerificationRequestDto);
+
             var employee = await repository.GetByMailAsync(mailVerificationRequestDto.Email, cancellationToken);
             if (employee == null)
             {
@@ -82,6 +87,8 @@ namespace InventoryApp.Controllers
         [HttpPut("ChangePassword")]
         public async Task<IActionResult> ChangePassword([FromBody] PasswordRequestDto passwordRequestDto, CancellationToken cancellationToken)
         {
+            passwordRequestDto = AntiXssUtility.EncodeDto(passwordRequestDto);
+
             var currentUserEmail = User.FindFirstValue(ClaimTypes.Email);
             if (currentUserEmail == null)
             {
@@ -112,6 +119,8 @@ namespace InventoryApp.Controllers
         [HttpPost("ForgotPassword")]
         public async Task<IActionResult> ForgotPasswordCode([FromBody] ForgotPasswordRequestDto forgotPasswordRequestdto, CancellationToken cancellationToken)
         {
+            forgotPasswordRequestdto = AntiXssUtility.EncodeDto(forgotPasswordRequestdto);
+
             var employee = await repository.GetByMailAsync(forgotPasswordRequestdto.Email, cancellationToken);
             if (employee == null)
             {
@@ -135,6 +144,8 @@ namespace InventoryApp.Controllers
         [HttpPut("ForgotPasswordChange")]
         public async Task<IActionResult> ForgotPasswordChange([FromBody] ForgotPasswordResponseDto forgotPasswordResponseDto, CancellationToken cancellationToken)
         {
+            forgotPasswordResponseDto = AntiXssUtility.EncodeDto(forgotPasswordResponseDto);
+
             var employee = await repository.GetByMailAsync(forgotPasswordResponseDto.Email, cancellationToken);
             if (employee.ForgotCode != forgotPasswordResponseDto.ForgotCode)
             {

@@ -13,8 +13,5 @@ namespace InventoryApp.Application.Dto
         [Required(ErrorMessage = "Yeni şifre boş olamaz.")]
         public string NewPassword { get; set; }
 
-        [Required(ErrorMessage = "Yeni şifreyi tekrar giriniz.")]
-        public string NewPassword2 { get; set; }
-
     }
 }

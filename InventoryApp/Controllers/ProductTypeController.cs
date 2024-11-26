@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
+using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,6 +49,8 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetProductTypesByName([FromQuery] string name, CancellationToken cancellationToken)
         {
+            name = AntiXssUtility.EncodeDto(name);
+
             var productType = await repository.GetByNameAsync(name, cancellationToken);
             if (productType.IsNullOrEmpty())
                 return NotFound("Bu isme sahip Product Type yok.");
@@ -73,6 +76,8 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProductType([FromBody] ProductTypeRequestDto productTypeRequestDto, CancellationToken cancellationToken)
         {
+            productTypeRequestDto = AntiXssUtility.EncodeDto(productTypeRequestDto);
+
             var product = mapper.Map<ProductType>(productTypeRequestDto);
             await repository.CreateAsync(product, cancellationToken);
 
@@ -85,6 +90,8 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProductType(int id, [FromBody] ProductTypeRequestDto productTypeRequestDto, CancellationToken cancellationToken)
         {
+            productTypeRequestDto = AntiXssUtility.EncodeDto(productTypeRequestDto);
+
             var existingProductType = await repository.GetByIdAsync(id, cancellationToken);
             if (existingProductType == null)
                 return NotFound();

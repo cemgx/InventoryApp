@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
+using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -82,6 +83,8 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInventory([FromBody] InventoryRequestDto inventoryRequestDto, CancellationToken cancellationToken)
         {
+            inventoryRequestDto = AntiXssUtility.EncodeDto(inventoryRequestDto);
+
             var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId, cancellationToken);
             var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId, cancellationToken);
             var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId, cancellationToken);
@@ -114,6 +117,8 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryRequestDto inventoryRequestDto, CancellationToken cancellationToken)
         {
+            inventoryRequestDto = AntiXssUtility.EncodeDto(inventoryRequestDto);
+
             var inventory = await inventoryRepository.GetByIdAsync(id, cancellationToken);
             if (inventory == null)
                 return NotFound($"{id} numaralı Id ile eşleşen bir Inventory bulunamadı.");

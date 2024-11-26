@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Interfaces;
+using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,10 +50,12 @@ namespace InventoryApp.Controllers
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name, CancellationToken cancellationToken)
         {
+            name = AntiXssUtility.EncodeDto(name);
+
             var invoices = await repository.GetByFirmNameAsync(name, cancellationToken);
             if (invoices.IsNullOrEmpty())
             {
-                return NotFound("Bu isme sahip firma yok.");
+                return NotFound($"{name} ismine sahip firma bulunamadı.");
             }
 
             var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
@@ -88,6 +91,8 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto, CancellationToken cancellationToken)
         {
+            invoiceRequestDto = AntiXssUtility.EncodeDto(invoiceRequestDto);
+
             var invoice = mapper.Map<Invoice>(invoiceRequestDto);
 
             await repository.CreateAsync(invoice, cancellationToken);
@@ -101,9 +106,11 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceRequestDto invoiceRequestDto, CancellationToken cancellationToken)
         {
+            invoiceRequestDto = AntiXssUtility.EncodeDto(invoiceRequestDto);
+
             var invoice = await repository.GetByIdAsync(id, cancellationToken);
             if (invoice == null)
-                return NotFound("{id} numaralı Invoice bulunamadı.");
+                return NotFound($"{id} numaralı Invoice bulunamadı.");
 
             mapper.Map(invoiceRequestDto, invoice);
 

@@ -2,6 +2,7 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Hash;
 using InventoryApp.Application.Interfaces;
+using InventoryApp.Application.Utility;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authentication;
@@ -57,6 +58,8 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetEmployeesByName([FromQuery] string name, CancellationToken cancellationToken)
         {
+            name = AntiXssUtility.EncodeDto(name);
+
             var employees = await repository.GetByNameAsync(name, cancellationToken);
             if (employees.IsNullOrEmpty())
             {
@@ -86,6 +89,10 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
         {
+            employeeRequestDto = AntiXssUtility.EncodeDto(employeeRequestDto);
+
+            employeeRequestDto = AntiXssUtility.EncodeDto(employeeRequestDto);
+
             var existingEmployee = await repository.GetByMailAsync(employeeRequestDto.Email, cancellationToken);
             if (existingEmployee != null)
                 return NotFound("Bu maille zaten bir kullanıcı mevcut.");
@@ -103,7 +110,7 @@ namespace InventoryApp.Controllers
             await repository.CreateAsync(employee, cancellationToken);
             
             var result = mapper.Map<EmployeeResponseDto>(employee);
-            return Created($"Hesabınız başarıyla oluşturuldu. Giriş yapabilmek için mailinizi {randomCode} ile onaylamanız gerekmektedir. Kullanıcı bilgileriniz ise aşağıdadır.", result);
+            return Created("", $"Hesabınız başarıyla oluşturuldu. Giriş yapabilmek için mailinizi {randomCode} ile onaylamanız gerekmektedir.");
         }
 
         [HttpPut("{id}")]
@@ -111,6 +118,8 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
         {
+            employeeRequestDto = AntiXssUtility.EncodeDto(employeeRequestDto);
+
             var existingEmployee = await repository.GetByIdAsync(id, cancellationToken);
             if (existingEmployee == null)
             {
