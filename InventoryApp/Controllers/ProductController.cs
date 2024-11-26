@@ -57,8 +57,6 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts([FromQuery] string name, CancellationToken cancellationToken)
         {
-            name = AntiXssUtility.Encode(name);
-
             var products = await productRepository.GetByNameAsync(name, cancellationToken);
             if (products.IsNullOrEmpty())
             {
@@ -106,10 +104,6 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProduct([FromBody] ProductRequestDto productRequestDto, CancellationToken cancellationToken)
         {
-            productRequestDto = AntiXssUtility.EncodeDto(productRequestDto);
-
-            productRequestDto = AntiXssUtility.EncodeDto(productRequestDto);
-
             var matchedProductType = await typeRepository.GetByIdAsync(productRequestDto.ProductTypeId, cancellationToken);
             if (matchedProductType == null)
                 return BadRequest("Girdiğiniz Id'ye sahip bir Product Type bulunamadı.");
@@ -131,8 +125,6 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductRequestDto productRequestDto, CancellationToken cancellationToken)
         {
-            productRequestDto = AntiXssUtility.EncodeDto(productRequestDto);
-
             var product = await productRepository.GetByIdAsync(id, cancellationToken);
             if (product == null)
                 return NotFound();

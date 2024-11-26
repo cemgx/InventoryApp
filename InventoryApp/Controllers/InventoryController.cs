@@ -31,6 +31,10 @@ namespace InventoryApp.Controllers
         public async Task<IActionResult> GetInventories(CancellationToken cancellationToken)
         {
             var inventories = await inventoryRepository.GetAllAsync(cancellationToken);
+            if (inventories.IsNullOrEmpty())
+            {
+                return NotFound("Hiç inventory yok");
+            }
 
             var result = mapper.Map<List<InventoryResponseDto>>(inventories);
             return Ok(result);
@@ -83,8 +87,6 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInventory([FromBody] InventoryRequestDto inventoryRequestDto, CancellationToken cancellationToken)
         {
-            inventoryRequestDto = AntiXssUtility.EncodeDto(inventoryRequestDto);
-
             var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId, cancellationToken);
             var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId, cancellationToken);
             var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId, cancellationToken);
@@ -117,8 +119,6 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryRequestDto inventoryRequestDto, CancellationToken cancellationToken)
         {
-            inventoryRequestDto = AntiXssUtility.EncodeDto(inventoryRequestDto);
-
             var inventory = await inventoryRepository.GetByIdAsync(id, cancellationToken);
             if (inventory == null)
                 return NotFound($"{id} numaralı Id ile eşleşen bir Inventory bulunamadı.");

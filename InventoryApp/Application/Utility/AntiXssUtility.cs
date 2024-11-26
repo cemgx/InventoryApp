@@ -1,24 +1,23 @@
-﻿using System.Text.Encodings.Web;
+﻿using Ganss.Xss;
 
 namespace InventoryApp.Application.Utility
 {
     public static class AntiXssUtility
     {
-        private static readonly HtmlEncoder _htmlEncoder = HtmlEncoder.Default;
-        public static string Encode(string input)
+        public static string Sanitize(string input)
         {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return input;
-            }
-            return _htmlEncoder.Encode(input);
+            if (string.IsNullOrWhiteSpace(input)) return input;
+
+            var sanitizer = new HtmlSanitizer();
+            return sanitizer.Sanitize(input);
         }
 
-        public static T EncodeDto<T>(T dto)
+        public static T SanitizeDto<T>(T dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
+            var sanitizer = new HtmlSanitizer();
             var properties = typeof(T).GetProperties();
             foreach (var property in properties)
             {
@@ -27,7 +26,7 @@ namespace InventoryApp.Application.Utility
                     var value = property.GetValue(dto) as string;
                     if (!string.IsNullOrWhiteSpace(value))
                     {
-                        property.SetValue(dto, _htmlEncoder.Encode(value));
+                        property.SetValue(dto, sanitizer.Sanitize(value));
                     }
                 }
             }

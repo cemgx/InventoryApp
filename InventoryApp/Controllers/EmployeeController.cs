@@ -34,7 +34,7 @@ namespace InventoryApp.Controllers
             var employees = await repository.GetAllAsync(cancellationToken);
             if (employees.IsNullOrEmpty())
             {
-                return NotFound();
+                return NotFound("Hiç employee yok");
             }
 
             var orderByEmployees = employees.OrderBy(x => x.Name);
@@ -58,8 +58,6 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetEmployeesByName([FromQuery] string name, CancellationToken cancellationToken)
         {
-            name = AntiXssUtility.Encode(name);
-
             var employees = await repository.GetByNameAsync(name, cancellationToken);
             if (employees.IsNullOrEmpty())
             {
@@ -89,10 +87,6 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
         {
-            employeeRequestDto = AntiXssUtility.EncodeDto(employeeRequestDto);
-
-            employeeRequestDto = AntiXssUtility.EncodeDto(employeeRequestDto);
-
             var existingEmployee = await repository.GetByMailAsync(employeeRequestDto.Email, cancellationToken);
             if (existingEmployee != null)
                 return NotFound("Bu maille zaten bir kullanıcı mevcut.");
@@ -118,8 +112,6 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
         {
-            employeeRequestDto = AntiXssUtility.EncodeDto(employeeRequestDto);
-
             var existingEmployee = await repository.GetByIdAsync(id, cancellationToken);
             if (existingEmployee == null)
             {
