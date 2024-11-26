@@ -50,7 +50,7 @@ namespace InventoryApp.Controllers
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name, CancellationToken cancellationToken)
         {
-            name = AntiXssUtility.EncodeDto(name);
+            name = AntiXssUtility.Encode(name);
 
             var invoices = await repository.GetByFirmNameAsync(name, cancellationToken);
             if (invoices.IsNullOrEmpty())

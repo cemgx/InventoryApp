@@ -7,7 +7,11 @@ namespace InventoryApp.Application.Utility
         private static readonly HtmlEncoder _htmlEncoder = HtmlEncoder.Default;
         public static string Encode(string input)
         {
-            return string.IsNullOrWhiteSpace(input) ? input : _htmlEncoder.Encode(input);
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return input;
+            }
+            return _htmlEncoder.Encode(input);
         }
 
         public static T EncodeDto<T>(T dto)

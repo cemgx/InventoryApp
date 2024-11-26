@@ -57,7 +57,7 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts([FromQuery] string name, CancellationToken cancellationToken)
         {
-            name = AntiXssUtility.EncodeDto(name);
+            name = AntiXssUtility.Encode(name);
 
             var products = await productRepository.GetByNameAsync(name, cancellationToken);
             if (products.IsNullOrEmpty())
