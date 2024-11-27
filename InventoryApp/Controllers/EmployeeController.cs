@@ -2,16 +2,9 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Hash;
 using InventoryApp.Application.Interfaces;
-using InventoryApp.Application.Utility;
-using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.Linq;
-using System.Security.Claims;
 
 namespace InventoryApp.Controllers
 {
