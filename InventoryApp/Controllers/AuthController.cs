@@ -33,19 +33,19 @@ namespace InventoryApp.Controllers
             var employee = await repository.GetByMailAsync(loginRequestDto.Email, cancellationToken);
             if (employee == null)
             {
-                return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
+                return Unauthorized(new { message = "Geçersiz kullanıcı adı veya şifre." });
             }
 
             bool verified = passwordHasher.VerifyPassword(employee.Password, employee.Salt, loginRequestDto.Password);
 
             if (verified == false)
             {
-                return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
+                return Unauthorized(new { message = "Geçersiz kullanıcı adı veya şifre." });
             }
 
             if (employee.IsVerified == false)
             {
-                return NotFound("Mailiniz doğrulanmamış. Mailinizi doğrulayıp tekrar deneyin.");
+                return NotFound(new { message = "Mailiniz doğrulanmamış. Mailinizi doğrulayıp tekrar deneyin." });
             }
 
             var claims = new List<Claim>
@@ -56,7 +56,7 @@ namespace InventoryApp.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, "EmployeeCookie");
             await HttpContext.SignInAsync("EmployeeCookie", new ClaimsPrincipal(claimsIdentity));
 
-            return Ok("Başarıyla giriş yaptınız.");
+            return Ok(new { message = "Başarıyla giriş yaptınız." });
         }
 
         [HttpPut("MailVerification")]

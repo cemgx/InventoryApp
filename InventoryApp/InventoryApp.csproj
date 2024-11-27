@@ -29,4 +29,11 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\frontend\login\index\app.js" />
+    <None Include="wwwroot\frontend\login\index\index.html" />
+    <None Include="wwwroot\frontend\login\index\style.css" />
+    <None Include="wwwroot\frontend\login\success\success.html" />
+  </ItemGroup>
+
 </Project>
