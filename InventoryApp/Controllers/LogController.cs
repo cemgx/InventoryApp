@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using InventoryApp.Models.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
 {
@@ -7,66 +9,47 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class LogController : ControllerBase
     {
+        private readonly InventoryAppDbContext _context;
+
+        public LogController(InventoryAppDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpGet]
         public IActionResult GetAllLogs()
         {
-            var logDirectory = "C:\\Work\\InventoryApp\\InventoryApp\\logs";
-            if (!Directory.Exists(logDirectory))
-            {
-                return NotFound("Log path bulunamadı");
-            }
-
-            var logs = Directory.GetFiles(logDirectory, "log-*.txt")
-                                .Select(Path.GetFileName)
-                                .ToList();
+            var logs = _context.Logs
+                               .OrderByDescending(l => l.TimeStamp)
+                               .ToList();
 
             return Ok(logs);
         }
 
-        [HttpGet("{logFileName}")]
-        public IActionResult GetLogFile(string logFileName)
+        [HttpGet("{id}")]
+        public IActionResult GetLogById(int id)
         {
-            var logDirectory = "C:\\Work\\InventoryApp\\InventoryApp\\logs";
-            var filePath = Path.Combine(logDirectory, logFileName);
-            if (!System.IO.File.Exists(filePath))
-            {
-                return NotFound("Log dosyası bulunamadı");
-            }
+            var log = _context.Logs.FirstOrDefault(l => l.Id == id);
 
-            var content = System.IO.File.ReadAllText(filePath);
-            return Ok(content);
+            if (log == null)
+                return NotFound("Log bulunamadı.");
+
+            return Ok(log);
         }
 
         [HttpGet("search")]
         public IActionResult SearchLogs([FromQuery] string term)
         {
-            var logDirectory = "C:\\Work\\InventoryApp\\InventoryApp\\logs";
-            if (!Directory.Exists(logDirectory))
-            {
-                return NotFound("Log path bulunamadı");
-            }
+            var results = _context.Logs
+                                  .Where(l => EF.Functions.Like(l.Message, $"%{term}%") ||
+                                              EF.Functions.Like(l.Exception, $"%{term}%") ||
+                                              EF.Functions.Like(l.Properties, $"%{term}%"))
+                                  .OrderByDescending(l => l.TimeStamp)
+                                  .Take(100)
+                                  .ToList();
 
-            var results = new List<string>();
-            var logFiles = Directory.GetFiles(logDirectory, "log-*.txt");
-
-            foreach (var logFile in logFiles)
-            {
-                using var stream = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(stream);
-                while (!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-                    if (line != null && line.Contains(term, StringComparison.OrdinalIgnoreCase))
-                    {
-                        results.Add(line);
-                    }
-                }
-            }
-
-            if (results.Count == 0 || results == null)
-            {
-                return NotFound("Aradığınız terim ile alakalı hiçbir sonuç bulunamadı");
-            }
+            if (results.IsNullOrEmpty())
+                return NotFound("Aradığınız terim ile alakalı hiçbir sonuç bulunamadı.");
 
             return Ok(results);
         }

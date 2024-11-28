@@ -6,14 +6,43 @@ using InventoryApp.Models.Context;
 using InventoryApp.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Sinks.MSSqlServer;
+using System.Collections.ObjectModel;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("Default Connection");
+
+var columnOptions = new ColumnOptions
+{
+    AdditionalColumns = new Collection<SqlColumn>
+    {
+        new SqlColumn("UserName", System.Data.SqlDbType.NVarChar) { DataLength = 256 }
+    }
+};
+
+builder.Logging.EnableRedaction();
+
+builder.Services.AddRedaction();
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()
     .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-    .Enrich.FromLogContext()
+    .Enrich.With<UserNameEnricher>()
+    .WriteTo.MSSqlServer(
+        connectionString: connectionString,
+        sinkOptions: new MSSqlServerSinkOptions
+        {
+            TableName = "Logs",
+            AutoCreateSqlTable = false,
+            SchemaName = "dbo",
+            BatchPostingLimit = 1
+        },
+        columnOptions: new ColumnOptions
+        {
+            Exception = { AllowNull = true }
+        })
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -95,6 +124,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<LoggingMiddleware>();
+
+app.MapGet("/", () => "Hello World!");
 
 app.MapControllers();
 
