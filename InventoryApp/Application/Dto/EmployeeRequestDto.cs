@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using InventoryApp.Application.MiddleWares;
+using System.ComponentModel.DataAnnotations;
 
 namespace InventoryApp.Application.Dto
 {
     public class EmployeeRequestDto
     {
         [Required(ErrorMessage = "İsim değeri boş olamaz")]
+        [PiiDataAttirbute]
         public string Name { get; set; }
 
         [EmailAddress(ErrorMessage = "Geçerli bir mail adresi giriniz.")]

@@ -14,11 +14,13 @@ namespace InventoryApp.Controllers
     {
         private readonly IEmployeeRepository repository;
         private readonly IMapper mapper;
+        private readonly ILogger<EmployeeController> _logger;
 
-        public EmployeeController(IEmployeeRepository repository, IMapper mapper)
+        public EmployeeController(IEmployeeRepository repository, IMapper mapper, ILogger<EmployeeController> logger)
         {
             this.repository = repository;
             this.mapper = mapper;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -94,8 +96,11 @@ namespace InventoryApp.Controllers
             var randomCode = repository.GenerateRandomString(6);
             employee.MailVerificationCode = randomCode;
 
+    
             await repository.CreateAsync(employee, cancellationToken);
-            
+
+            _logger.LogError(employeeRequestDto.Name);
+
             var result = mapper.Map<EmployeeResponseDto>(employee);
             return Created("", $"Hesabınız başarıyla oluşturuldu. Giriş yapabilmek için mailinizi {randomCode} ile onaylamanız gerekmektedir.");
         }

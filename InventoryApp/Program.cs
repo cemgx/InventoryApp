@@ -5,11 +5,21 @@ using InventoryApp.Application.MiddleWares;
 using InventoryApp.Models.Context;
 using InventoryApp.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Compliance.Classification;
+using Microsoft.Extensions.Compliance.Redaction;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
+using Microsoft.Extensions.Logging;
+using InventoryApp.Models.Entity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options => options.JsonWriterOptions = new System.Text.Json.JsonWriterOptions
+{
+    Indented = true
+});
 
 var connectionString = builder.Configuration.GetConnectionString("Default Connection");
 
@@ -21,11 +31,18 @@ var columnOptions = new ColumnOptions
     }
 };
 
-builder.Logging.EnableRedaction();
+builder.Services.AddRedaction(x =>
+{
+    x.SetRedactor<StarRedactor>(new DataClassificationSet(DataTaxonomy.SensitiveData));
 
-builder.Services.AddRedaction();
+    //x.SetHmacRedactor(options =>
+    //{
+    //    options.Key = Convert.ToBase64String("SecretKeyDontHardcodeInsteadStoreAndLoadSecurely"u8);
+    //    options.KeyId = 69;
+    //}, new DataClassificationSet(DataTaxonomy.PiiData));
+});
 
-Log.Logger = new LoggerConfiguration()
+Serilog.Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()
     .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
@@ -100,6 +117,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.MapPost("/employees", (Employee employee, ILogger<Program> logger) =>
+{
+    logger.LogInformation("Customer created.");
+    logger.LogEmployeeCreated(employee);
+
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -107,8 +131,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowFrontend");
+
 app.UseStaticFiles();
+
+app.UseMiddleware<LoggingMiddleware>(/*"secret"*/);
 
 app.UseRouting();
 
@@ -123,7 +149,7 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.UseMiddleware<LoggingMiddleware>();
+app.UseCors("AllowFrontend");
 
 app.MapGet("/", () => "Hello World!");
 
