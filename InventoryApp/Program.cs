@@ -6,12 +6,9 @@ using InventoryApp.Models.Context;
 using InventoryApp.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Compliance.Classification;
-using Microsoft.Extensions.Compliance.Redaction;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
-using Microsoft.Extensions.Logging;
-using InventoryApp.Models.Entity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,19 +31,13 @@ var columnOptions = new ColumnOptions
 builder.Services.AddRedaction(x =>
 {
     x.SetRedactor<StarRedactor>(new DataClassificationSet(DataTaxonomy.SensitiveData));
-
-    //x.SetHmacRedactor(options =>
-    //{
-    //    options.Key = Convert.ToBase64String("SecretKeyDontHardcodeInsteadStoreAndLoadSecurely"u8);
-    //    options.KeyId = 69;
-    //}, new DataClassificationSet(DataTaxonomy.PiiData));
 });
 
 Serilog.Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
+    .Enrich.With(new UserNameEnricher(new StarRedactor()))
     .WriteTo.Console()
     .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-    .Enrich.With<UserNameEnricher>()
     .WriteTo.MSSqlServer(
         connectionString: connectionString,
         sinkOptions: new MSSqlServerSinkOptions
@@ -117,13 +108,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.MapPost("/employees", (Employee employee, ILogger<Program> logger) =>
-{
-    logger.LogInformation("Customer created.");
-    logger.LogEmployeeCreated(employee);
-
-});
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -134,7 +118,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
-app.UseMiddleware<LoggingMiddleware>(/*"secret"*/);
+app.UseMiddleware<LoggingMiddleware>();
 
 app.UseRouting();
 

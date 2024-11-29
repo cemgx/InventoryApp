@@ -1,44 +1,34 @@
-﻿using Serilog;
-using System.Security.Cryptography;
-using System.Text;
+﻿using Microsoft.Extensions.Compliance.Redaction;
 
 namespace InventoryApp.Application.MiddleWares
 {
     public class LoggingMiddleware
     {
         private readonly RequestDelegate _next;
-        //private readonly ILogger<LoggingMiddleware> _logger;
-        //private readonly string _secretKey;
+        private readonly ILogger<LoggingMiddleware> _logger;
+        private readonly Redactor _redactor;
 
-        public LoggingMiddleware(RequestDelegate next/*, ILogger<LoggingMiddleware> logger, string secretKey*/)
+        public LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger, Redactor redactor)
         {
             _next = next;
-            //_logger = logger;
-            //_secretKey = secretKey;
+            _logger = logger;
+            _redactor = redactor;
         }
 
         public async Task Invoke(HttpContext context)
         {
-            //if (context.Request.Headers.ContainsKey("mail"))
-            //{
-            //    var email = context.Request.Headers["mail"];
-            //    var hashedEmail = HashData(email);
+            if (context.Request.Method == HttpMethods.Post)
+            {
+                context.Request.EnableBuffering();
+                var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
+                context.Request.Body.Position = 0;
 
-            //    _logger.LogInformation("Hashed Email: {HashedEmail}", hashedEmail);
-            //}
+                var redactedBody = _redactor.Redact(body);
 
-            Log.Information("HTTP Request: {Method} {Path}", context.Request.Method, context.Request.Path);
+                _logger.LogInformation("Request Body (Redacted): {RedactedBody}", redactedBody);
+            }
 
             await _next(context);
-
-            Log.Information("HTTP Response: {StatusCode}", context.Response.StatusCode);
         }
-
-        //private string HashData(string data)
-        //{
-        //    using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_secretKey));
-        //    var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-        //    return Convert.ToBase64String(hashBytes);
-        //}
     }
 }

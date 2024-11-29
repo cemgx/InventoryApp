@@ -1,5 +1,6 @@
 ﻿using InventoryApp.Application.Dto;
 using InventoryApp.Models.Entity;
+using Microsoft.AspNet.Identity;
 
 namespace InventoryApp.Application.MiddleWares
 {

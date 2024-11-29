@@ -45,7 +45,6 @@ namespace InventoryApp.Controllers
                                               EF.Functions.Like(l.Exception, $"%{term}%") ||
                                               EF.Functions.Like(l.Properties, $"%{term}%"))
                                   .OrderByDescending(l => l.TimeStamp)
-                                  .Take(100)
                                   .ToList();
 
             if (results.IsNullOrEmpty())

@@ -96,7 +96,6 @@ namespace InventoryApp.Controllers
             var randomCode = repository.GenerateRandomString(6);
             employee.MailVerificationCode = randomCode;
 
-    
             await repository.CreateAsync(employee, cancellationToken);
 
             _logger.LogError(employeeRequestDto.Name);
