@@ -1,16 +1,25 @@
 ﻿using InventoryApp.Application.Extensions;
 using InventoryApp.Application.Interfaces;
+using InventoryApp.Application.LogEntities;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Compliance.Redaction;
 using System.Reflection.Metadata.Ecma335;
 
 namespace InventoryApp.Repositories
 {
     public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
     {
-        public EmployeeRepository(InventoryAppDbContext context) : base(context)
+        private readonly ILogger<EmployeeRepository> _logger;
+        private readonly Redactor _redactor;
+        private readonly InventoryAppDbContext _context;
+        public EmployeeRepository(ILogger<EmployeeRepository> logger, Redactor redactor, InventoryAppDbContext context)
+            : base(context)
         {
+            _logger = logger;
+            _redactor = redactor;
+            _context = context;
         }
 
         public async Task<List<Employee>> GetByEmployeeIdAsync(int employeeId, CancellationToken cancellationToken)
@@ -33,6 +42,17 @@ namespace InventoryApp.Repositories
         {
             return string.Create<object?>(length, null,
                 static (chars, _) => Random.Shared.GetItems(Charset, chars));
+        }
+
+        public async Task LogEmployeeData(EmployeeLog employeeLog, CancellationToken cancellationToken)
+        {
+            //employeeLog.Name = _redactor.Redact(employeeLog.Name);
+            //employeeLog.Email = _redactor.Redact(employeeLog.Email);
+
+            _logger.LogInformation("Employee Created: Name = {Name}, Email = {Email}",
+                employeeLog.Name, employeeLog.Email);
+
+            await Task.CompletedTask;
         }
 
     }

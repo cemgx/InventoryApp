@@ -2,8 +2,10 @@
 using InventoryApp.Application.Dto;
 using InventoryApp.Application.Hash;
 using InventoryApp.Application.Interfaces;
+using InventoryApp.Application.LogEntities;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
@@ -15,12 +17,14 @@ namespace InventoryApp.Controllers
         private readonly IEmployeeRepository repository;
         private readonly IMapper mapper;
         private readonly ILogger<EmployeeController> _logger;
+        private readonly Redactor _redactor;
 
-        public EmployeeController(IEmployeeRepository repository, IMapper mapper, ILogger<EmployeeController> logger)
+        public EmployeeController(IEmployeeRepository repository, IMapper mapper, ILogger<EmployeeController> logger, Redactor redactor)
         {
             this.repository = repository;
             this.mapper = mapper;
             _logger = logger;
+            _redactor = redactor;
         }
 
         [HttpGet]
@@ -98,7 +102,16 @@ namespace InventoryApp.Controllers
 
             await repository.CreateAsync(employee, cancellationToken);
 
-            _logger.LogError(employeeRequestDto.Name);
+            var employeeLog = new EmployeeLog
+            {
+                Name = _redactor.Redact(employeeRequestDto.Name),
+                Email = _redactor.Redact(employeeRequestDto.Email),
+                Password = "***" // Şifre logda asla görünmemeli
+            };
+
+            await repository.LogEmployeeData(employeeLog, cancellationToken);
+
+            _logger.LogError(employeeLog.Name);
 
             var result = mapper.Map<EmployeeResponseDto>(employee);
             return Created("", $"Hesabınız başarıyla oluşturuldu. Giriş yapabilmek için mailinizi {randomCode} ile onaylamanız gerekmektedir.");

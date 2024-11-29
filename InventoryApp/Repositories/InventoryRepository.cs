@@ -8,11 +8,11 @@ namespace InventoryApp.Repositories
 {
     public class InventoryRepository : Repository<Inventory>, IInventoryRepository
     {
-        private readonly InventoryAppDbContext context;
+        private readonly InventoryAppDbContext _context;
 
         public InventoryRepository(InventoryAppDbContext context) : base(context)
         {
-            this.context = context;
+            _context = context;
         }
         public async Task<Inventory> GetByProductIdWithIsTakenAsync(int productId, CancellationToken cancellationToken)
         {

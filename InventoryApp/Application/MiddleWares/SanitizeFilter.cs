@@ -1,4 +1,5 @@
 ﻿using InventoryApp.Application.Dto;
+using InventoryApp.Application.LogEntities;
 using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -31,7 +32,7 @@ namespace InventoryApp.Application.MiddleWares
 
             foreach (var argument in context.ActionArguments.Values)
             {
-                if (argument is EmployeeRequestDto employee)
+                if (argument is EmployeeLog employee)
                 {
                     employee.Name = _redactor.Redact(employee.Name);
                     employee.Email = _redactor.Redact(employee.Email);

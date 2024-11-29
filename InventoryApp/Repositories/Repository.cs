@@ -18,8 +18,8 @@ namespace InventoryApp.Repositories
 
         public async Task CreateAsync(T entity, CancellationToken cancellationToken)
         {
-            await this.context.Set<T>().AddAsync(entity);
-            await this.context.SaveChangesAsync(cancellationToken);
+            await context.Set<T>().AddAsync(entity);
+            await context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<List<T>> GetAllAsync(CancellationToken cancellationToken)

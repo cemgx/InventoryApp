@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using InventoryApp.Application.Dto;
+using InventoryApp.Application.LogEntities;
 using InventoryApp.Models.Entity;
 
 namespace InventoryApp.Application.Mappings
@@ -8,9 +9,11 @@ namespace InventoryApp.Application.Mappings
     {
         public EmployeeProfile()
         {
-            this.CreateMap<Employee, EmployeeResponseDto>().ReverseMap();
+            CreateMap<Employee, EmployeeResponseDto>().ReverseMap();
 
-            this.CreateMap<EmployeeRequestDto, Employee>();
+            CreateMap<EmployeeRequestDto, Employee>();
+
+            CreateMap<EmployeeRequestDto, EmployeeLog>();
         }
     }
 }
