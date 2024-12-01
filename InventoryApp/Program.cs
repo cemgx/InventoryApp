@@ -1,4 +1,5 @@
 using AutoMapper;
+using FluentValidation.AspNetCore;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Application.Mappings;
 using InventoryApp.Application.MiddleWares;
@@ -60,6 +61,9 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<SanitizeFilter>();
+}).AddFluentValidation(config =>
+{
+    config.RegisterValidatorsFromAssembly(typeof(Program).Assembly);
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

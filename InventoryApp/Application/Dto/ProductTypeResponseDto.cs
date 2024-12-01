@@ -6,7 +6,6 @@ namespace InventoryApp.Application.Dto
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "İsim değeri boş olamaz")]
         public string Name { get; set; }
     }
 }
