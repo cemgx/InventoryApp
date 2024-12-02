@@ -37,11 +37,7 @@
     <None Include="wwwroot\frontend\login\index\app.js" />
     <None Include="wwwroot\frontend\login\index\index.html" />
     <None Include="wwwroot\frontend\login\index\style.css" />
-    <None Include="wwwroot\frontend\login\success\success.html" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\frontend\employee\" />
+    <None Include="wwwroot\frontend\login\employee\index.html" />
   </ItemGroup>
 
 </Project>

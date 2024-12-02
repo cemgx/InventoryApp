@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <header class="navbar">
+        <div id="userName" class="username"></div>
+        <nav class="nav-links">
+            <button id="getPage" class="nav-btn active">Get</button>
+            <button id="postPage" class="nav-btn">Post</button>
+            <button id="putPage" class="nav-btn">Put</button>
+            <button id="deletePage" class="nav-btn">Delete</button>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div id="getSection" class="content-section active">
+            <div class="sidebar">
+                <button id="getEmployeesBtn">Get Employees</button>
+                <button id="getEmployeeByIdBtn">Get Employee (ID)</button>
+                <input id="getByIdInput" placeholder="Enter ID" />
+                <button id="getEmployeeByNameBtn">Get Employee (Name)</button>
+                <input id="getByNameInput" placeholder="Enter Name" />
+                <button id="getAllEmployeesBtn">Get All Employees</button>
+            </div>
+            <div class="main">
+                <table id="employeeTable" border="1"></table>
+                <p id="getResponse"></p>
+            </div>
+        </div>
+
+        <section id="postSection" class="content-section">
+            <div class="content">
+                <h2>Create Employee</h2>
+                <input id="postName" placeholder="Name">
+                <input id="postEmail" placeholder="Email" type="email">
+                <input id="postPassword" placeholder="Password" type="password">
+                <button id="createEmployeeBtn">Submit</button>
+                <div id="postResponse" class="response"></div>
+            </div>
+        </section>
+
+        <section id="putSection" class="content-section">
+            <div class="content">
+                <h2>Update Employee</h2>
+                <input id="putId" placeholder="ID" type="number">
+                <input id="putName" placeholder="Name">
+                <input id="putEmail" placeholder="Email" type="email">
+                <input id="putPassword" placeholder="Password" type="password">
+                <button id="updateEmployeeBtn">Update</button>
+                <div id="putResponse" class="response"></div>
+            </div>
+        </section>
+
+        <section id="deleteSection" class="content-section">
+            <div class="content">
+                <h2>Delete Employee</h2>
+                <input id="deleteId" placeholder="ID" type="number">
+                <button id="deleteEmployeeBtn">Delete</button>
+                <div id="deleteResponse" class="response"></div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -128,7 +128,12 @@ namespace InventoryApp.Controllers
                 return NotFound();
             }
 
+            var passwordHasher = new PasswordHasher();
+            var (hashedPassword, salt) = passwordHasher.HashPassword(employeeRequestDto.Password);
+
             mapper.Map(employeeRequestDto, existingEmployee);
+            existingEmployee.Password = hashedPassword;
+            existingEmployee.Salt = salt;
 
             await repository.UpdateAsync(existingEmployee, cancellationToken);
 
