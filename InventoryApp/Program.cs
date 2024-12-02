@@ -44,7 +44,7 @@ Serilog.Log.Logger = new LoggerConfiguration()
         sinkOptions: new MSSqlServerSinkOptions
         {
             TableName = "Logs",
-            AutoCreateSqlTable = false,
+            AutoCreateSqlTable = true,
             SchemaName = "dbo",
             BatchPostingLimit = 1
         },

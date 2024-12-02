@@ -7,10 +7,8 @@ namespace InventoryApp.Application.Dto
     {
         public int Id { get; set; }
 
-        [SensitiveDataAttirbute]
         public string Name { get; set; }
 
-        [SensitiveDataAttirbute]
         public string Email { get; set; }
 
         public string Password { get; set; }

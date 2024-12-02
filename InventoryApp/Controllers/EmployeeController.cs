@@ -106,7 +106,7 @@ namespace InventoryApp.Controllers
             {
                 Name = _redactor.Redact(employeeRequestDto.Name),
                 Email = _redactor.Redact(employeeRequestDto.Email),
-                Password = "***" // Şifre logda asla görünmemeli
+                Password = _redactor.Redact(employeeRequestDto.Password)
             };
 
             await repository.LogEmployeeData(employeeLog, cancellationToken);
