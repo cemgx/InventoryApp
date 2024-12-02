@@ -17,7 +17,7 @@
         const data = await response.json();
 
         if (response.ok) {
-            window.location.href = "frontend/login/success/success.html";
+            window.location.href = "https://localhost:44335/frontend/login/success/success.html";
         }
         else {
             document.getElementById("message").textContent = data.message || "mail veya şifre hatalı";

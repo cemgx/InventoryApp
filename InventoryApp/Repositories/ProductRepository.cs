@@ -3,20 +3,21 @@ using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace InventoryApp.Repositories
 {
     public class ProductRepository : Repository<Product>, IProductRepository
     {
-        private readonly InventoryAppDbContext context;
-        public ProductRepository(InventoryAppDbContext context) : base(context)
+        private readonly InventoryAppDbContext _context;
+        public ProductRepository(InventoryAppDbContext context, IMemoryCache cache) : base(context, cache)
         {
-            this.context = context;
+            _context = context;
         }
 
         public async Task<List<Product>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
-            return await this.context.Set<Product>()
+            return await context.Set<Product>()
                 .AsNoTracking()
                 .FilterById(i => i.Id, productId)
                 .ToListAsync(cancellationToken);
@@ -24,7 +25,7 @@ namespace InventoryApp.Repositories
 
         public async Task<List<Product>> GetByInvoicePurchaseDateAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
         {
-            return await this.context.Products
+            return await context.Products
                 .AsNoTracking()
                 .FilterByInvoicePurchaseDate(startDate, endDate)
                 .ToListAsync(cancellationToken);
@@ -32,7 +33,7 @@ namespace InventoryApp.Repositories
 
         public async Task<List<int>> GetProductIdsByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken)
         {
-            return await this.context.Products
+            return await context.Products
                 .AsNoTracking()
                 .FilterProductIdsByInvoiceId(invoiceId)
                 .ToListAsync(cancellationToken);

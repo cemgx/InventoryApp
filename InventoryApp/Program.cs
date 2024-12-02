@@ -34,7 +34,7 @@ builder.Services.AddRedaction(x =>
     x.SetRedactor<StarRedactor>(new DataClassificationSet(DataTaxonomy.SensitiveData));
 });
 
-Serilog.Log.Logger = new LoggerConfiguration()
+Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .Enrich.With(new UserNameEnricher(new StarRedactor()))
     .WriteTo.Console()
@@ -66,6 +66,7 @@ builder.Services.AddControllers(options =>
     config.RegisterValidatorsFromAssembly(typeof(Program).Assembly);
 });
 
+builder.Services.AddMemoryCache();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

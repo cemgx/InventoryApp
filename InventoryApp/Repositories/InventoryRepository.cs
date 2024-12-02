@@ -3,6 +3,7 @@ using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace InventoryApp.Repositories
 {
@@ -10,26 +11,26 @@ namespace InventoryApp.Repositories
     {
         private readonly InventoryAppDbContext _context;
 
-        public InventoryRepository(InventoryAppDbContext context) : base(context)
+        public InventoryRepository(InventoryAppDbContext context, IMemoryCache cache) : base(context, cache)
         {
             _context = context;
         }
         public async Task<Inventory> GetByProductIdWithIsTakenAsync(int productId, CancellationToken cancellationToken)
         {
-            return await this.context.Set<Inventory>()
+            return await context.Set<Inventory>()
                 .FilterByProductIdWithIsTaken(productId)
                 .FirstOrDefaultAsync(cancellationToken);
         }
         public async Task<List<Inventory>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
-            return await this.context.Set<Inventory>()
+            return await context.Set<Inventory>()
                 .AsNoTracking()
                 .FilterByProductId(productId)
                 .ToListAsync(cancellationToken);
         }
         public async Task<List<Inventory>> GetByDeliveredDateAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
         {
-            return await this.context.Set<Inventory>()
+            return await context.Set<Inventory>()
                 .AsNoTracking()
                 .FilterByDeliveredDate(startDate, endDate)
                 .ToListAsync(cancellationToken);

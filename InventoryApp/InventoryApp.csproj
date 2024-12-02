@@ -40,4 +40,8 @@
     <None Include="wwwroot\frontend\login\success\success.html" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\frontend\employee\" />
+  </ItemGroup>
+
 </Project>

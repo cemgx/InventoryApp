@@ -3,12 +3,13 @@ using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace InventoryApp.Repositories
 {
     public class ProductTypeRepository : Repository<ProductType>, IProductTypeRepository
     {
-        public ProductTypeRepository(InventoryAppDbContext context) : base(context)
+        public ProductTypeRepository(InventoryAppDbContext context, IMemoryCache cache) : base(context, cache)
         {
         }
 
