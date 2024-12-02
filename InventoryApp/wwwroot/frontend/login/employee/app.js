@@ -88,20 +88,24 @@ document.getElementById("createEmployeeBtn").addEventListener("click", async () 
     const name = document.getElementById("postName").value;
     const email = document.getElementById("postEmail").value;
     const password = document.getElementById("postPassword").value;
+/*    var csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;*/
 
     if (!name || !email || !password) {
-        return showResponse("All fields are required.", "postResponse", true);
+        return showResponse("Hatalı giriş!", "postResponse", true);
     }
 
     try {
         const response = await fetch(`${API_URL}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password }),
+            headers: {
+                /*'X-CSRF-TOKEN': csrfToken,*/
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, email, password/*, csrfToken*/}),
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to create employee.");
+            throw new Error(errorData.message || "employee oluşturulamadı");
         }
         const result = await response.text();
         showResponse(result, "postResponse");

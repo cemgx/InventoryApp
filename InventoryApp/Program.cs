@@ -5,6 +5,7 @@ using InventoryApp.Application.Mappings;
 using InventoryApp.Application.MiddleWares;
 using InventoryApp.Models.Context;
 using InventoryApp.Repositories;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Compliance.Classification;
 using Serilog;
@@ -100,6 +101,13 @@ builder.Services.AddAuthentication("EmployeeCookie")
 
 builder.Services.AddAuthorization();
 
+//builder.Services.AddAntiforgery(options =>
+//{
+//    options.FormFieldName = "AntiforgeryFieldname";
+//    options.HeaderName = "X-CSRF-TOKEN-HEADERNAME";
+//    options.SuppressXFrameOptionsHeader = false;
+//});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -120,6 +128,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+//var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
 
 app.UseStaticFiles();
 
@@ -127,16 +136,33 @@ app.UseMiddleware<LoggingMiddleware>();
 
 app.UseRouting();
 
+app.UseAuthorization();
+
+#pragma warning disable ASP0014 // Suggest using top level route registrations
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
+#pragma warning restore ASP0014 // Suggest using top level route registrations
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
-app.UseAuthorization();
+//app.Use((context, next) =>
+//{
+//    var requestPath = context.Request.Path.Value;
+
+//    if (string.Equals(requestPath, "/", StringComparison.OrdinalIgnoreCase)
+//        || string.Equals(requestPath, "/index.html", StringComparison.OrdinalIgnoreCase))
+//    {
+//        var tokenSet = antiforgery.GetAndStoreTokens(context);
+//        context.Response.Cookies.Append("XSRF-TOKEN", tokenSet.RequestToken!,
+//            new CookieOptions { HttpOnly = false });
+//    }
+
+//    return next(context);
+//});
 
 app.UseCors("AllowFrontend");
 

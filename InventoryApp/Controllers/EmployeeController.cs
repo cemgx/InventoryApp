@@ -82,6 +82,7 @@ namespace InventoryApp.Controllers
         }
 
         [HttpPost]
+        //[ValidateAntiForgeryToken]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
