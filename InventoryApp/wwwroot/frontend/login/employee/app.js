@@ -37,7 +37,7 @@ document.getElementById("getEmployeeByIdBtn").addEventListener("click", async ()
     }
 
     try {
-        const response = await fetch(`${API_URL}/search?id=${encodeURIComponent(id)}`);
+        const response = await fetch(`${API_URL}/search?` + new URLSearchParams({ postId: (id) }).toString());
         if (!response.ok) throw new Error("Failed to fetch employee by ID.");
 
         // Burada gelen veriyi kontrol ediyoruz
@@ -88,31 +88,42 @@ document.getElementById("createEmployeeBtn").addEventListener("click", async () 
     const name = document.getElementById("postName").value;
     const email = document.getElementById("postEmail").value;
     const password = document.getElementById("postPassword").value;
-/*    var csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;*/
 
     if (!name || !email || !password) {
         return showResponse("Hatalı giriş!", "postResponse", true);
     }
 
     try {
+        const xsrfToken = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("XSRF-TOKEN="))
+            ?.split("=")[1];
+
+        if (!xsrfToken) {
+            throw new Error("Antiforgery token bulunamadı.");
+        }
+
         const response = await fetch(`${API_URL}`, {
             method: "POST",
             headers: {
-                /*'X-CSRF-TOKEN': csrfToken,*/
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-XSRF-TOKEN': xsrfToken,
             },
-            body: JSON.stringify({ name, email, password/*, csrfToken*/}),
+            body: JSON.stringify({ name, email, password }),
         });
+
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || "employee oluşturulamadı");
         }
+
         const result = await response.text();
         showResponse(result, "postResponse");
     } catch (error) {
         showResponse(error.message, "postResponse", true);
     }
 });
+
 
 // Put - Update Employee
 document.getElementById("updateEmployeeBtn").addEventListener("click", async () => {
@@ -122,20 +133,27 @@ document.getElementById("updateEmployeeBtn").addEventListener("click", async () 
     const password = document.getElementById("putPassword").value;
 
     if (!id || !name || !email || !password) {
-        return showResponse("All fields are required.", "putResponse", true);
+        return showResponse("bütün alanlar gereklidir", "putResponse", true);
     }
 
     try {
+        const xsrfToken = getCookie("XSRF-TOKEN");
+        if (!xsrfToken) {
+            throw new Error("Antiforgery token bulunamadı.");
+        }
         const response = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-XSRF-TOKEN": xsrfToken,
+            },
             body: JSON.stringify({ name, email, password }),
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to update employee.");
+            throw new Error(errorData.message || "employee güncelleme sırasında hata oldu");
         }
-        showResponse("Employee updated successfully.", "putResponse");
+        showResponse("Employee başarıyla güncellendi", "putResponse");
     } catch (error) {
         showResponse(error.message, "putResponse", true);
     }
@@ -144,12 +162,21 @@ document.getElementById("updateEmployeeBtn").addEventListener("click", async () 
 // Delete Employee
 document.getElementById("deleteEmployeeBtn").addEventListener("click", async () => {
     const id = document.getElementById("deleteId").value;
-    if (!id) return showResponse("Please enter an ID.", "deleteResponse", true);
+    if (!id) return showResponse("Lütfen ID girin", "deleteResponse", true);
 
     try {
-        const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-        if (!response.ok) throw new Error("Failed to delete employee.");
-        showResponse("Employee deleted successfully.", "deleteResponse");
+        const xsrfToken = getCookie("XSRF-TOKEN");
+        if (!xsrfToken) {
+            throw new Error("Antiforgery token bulunamadı.");
+        }
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE",
+            headers: {
+                "X-XSRF-TOKEN": xsrfToken,
+            },
+        });
+        if (!response.ok) throw new Error("Employee kaldırılamadı");
+        showResponse("Employee başarıyla kaldırıldı", "deleteResponse");
     } catch (error) {
         showResponse(error.message, "deleteResponse", true);
     }
@@ -185,4 +212,10 @@ function showResponse(message, elementId, isError = false) {
     const element = document.getElementById(elementId);
     element.textContent = message;
     element.style.color = isError ? "red" : "green";
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
 }

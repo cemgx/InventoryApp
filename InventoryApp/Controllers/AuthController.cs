@@ -11,6 +11,7 @@ using System.Security.Claims;
 using AutoMapper;
 using InventoryApp.Models.Entity;
 using InventoryApp.Application.Utility;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace InventoryApp.Controllers
 {
@@ -55,6 +56,11 @@ namespace InventoryApp.Controllers
 
             var claimsIdentity = new ClaimsIdentity(claims, "EmployeeCookie");
             await HttpContext.SignInAsync("EmployeeCookie", new ClaimsPrincipal(claimsIdentity));
+
+            var antiforgery = HttpContext.RequestServices.GetRequiredService<IAntiforgery>();
+            var tokens = antiforgery.GetAndStoreTokens(HttpContext);
+            HttpContext.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!,
+                new CookieOptions { HttpOnly = false });
 
             return Ok(new { message = "Başarıyla giriş yaptınız." });
         }
@@ -120,12 +126,6 @@ namespace InventoryApp.Controllers
             }
 
             var randomCode = repository.GenerateRandomString(6);
-            //var code2 = repository.GenerateRandomString(6);
-
-            //if (randomCode == code2)
-            //{
-            //    return BadRequest("aynı oluşturmuyor.");
-            //}
 
             employee.ForgotCode = randomCode;
             await repository.UpdateAsync(employee, cancellationToken);

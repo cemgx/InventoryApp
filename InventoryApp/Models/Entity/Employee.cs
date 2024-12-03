@@ -1,6 +1,4 @@
-﻿using InventoryApp.Application.Interfaces;
-
-namespace InventoryApp.Models.Entity
+﻿namespace InventoryApp.Models.Entity
 {
     public class Employee : BaseEntity
     {

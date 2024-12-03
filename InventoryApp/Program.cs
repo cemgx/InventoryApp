@@ -35,7 +35,7 @@ builder.Services.AddRedaction(x =>
     x.SetRedactor<StarRedactor>(new DataClassificationSet(DataTaxonomy.SensitiveData));
 });
 
-Log.Logger = new LoggerConfiguration()
+Serilog.Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .Enrich.With(new UserNameEnricher(new StarRedactor()))
     .WriteTo.Console()
@@ -70,7 +70,6 @@ builder.Services.AddControllers(options =>
 builder.Services.AddMemoryCache();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<InventoryAppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("Default Connection")));
 builder.Services.AddAutoMapper(opt =>
 {
@@ -101,11 +100,40 @@ builder.Services.AddAuthentication("EmployeeCookie")
 
 builder.Services.AddAuthorization();
 
-//builder.Services.AddAntiforgery(options =>
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-XSRF-TOKEN";
+    options.Cookie.Name = "XSRF-TOKEN"; 
+    options.Cookie.HttpOnly = false;
+});
+
+
+builder.Services.AddSwaggerGen();
+//options =>
 //{
-//    options.FormFieldName = "AntiforgeryFieldname";
-//    options.HeaderName = "X-CSRF-TOKEN-HEADERNAME";
-//    options.SuppressXFrameOptionsHeader = false;
+//    options.OperationFilter<AntiforgeryHeaderOperationFilter>();
+//    options.AddSecurityDefinition("csrf", new OpenApiSecurityScheme()
+//    {
+//        Type = SecuritySchemeType.ApiKey,
+//        Scheme = "csrf",
+//        In = ParameterLocation.Header,
+//        Name = "XSRF-TOKEN",
+//        Description = "CSRF token header"
+//    });
+//    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+//    {
+//        {
+//            new OpenApiSecurityScheme
+//            {
+//                Reference = new OpenApiReference
+//                {
+//                    Type = ReferenceType.SecurityScheme,
+//                    Id = "csrf"
+//                }
+//            },
+//            new string[] {}
+//        }
+//    });
 //});
 
 builder.Services.AddCors(options =>
@@ -121,14 +149,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseCors("AllowFrontend");
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-//var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
 
 app.UseStaticFiles();
 
@@ -145,28 +177,32 @@ app.UseEndpoints(endpoints =>
 });
 #pragma warning restore ASP0014 // Suggest using top level route registrations
 
-app.UseHttpsRedirection();
+var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
 
-app.UseAuthentication();
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.Lax,
+    Secure = CookieSecurePolicy.SameAsRequest
+});
 
-//app.Use((context, next) =>
-//{
-//    var requestPath = context.Request.Path.Value;
+app.Use(async (context, next) =>
+{
+    if (string.Equals(context.Request.Path, "/api/Employee", StringComparison.OrdinalIgnoreCase))
+    {
+        var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
+        await antiforgery.ValidateRequestAsync(context);
+    }
 
-//    if (string.Equals(requestPath, "/", StringComparison.OrdinalIgnoreCase)
-//        || string.Equals(requestPath, "/index.html", StringComparison.OrdinalIgnoreCase))
-//    {
-//        var tokenSet = antiforgery.GetAndStoreTokens(context);
-//        context.Response.Cookies.Append("XSRF-TOKEN", tokenSet.RequestToken!,
-//            new CookieOptions { HttpOnly = false });
-//    }
+    await next.Invoke();
+});
 
-//    return next(context);
-//});
+app.UseSwagger();
 
-app.UseCors("AllowFrontend");
-
-app.MapGet("/", () => "Hello World!");
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Inventory API V1");
+    options.RoutePrefix = string.Empty;
+});
 
 app.MapControllers();
 
