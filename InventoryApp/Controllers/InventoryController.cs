@@ -5,6 +5,7 @@ using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
@@ -14,43 +15,56 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class InventoryController : ControllerBase
     {
-        private readonly IInventoryRepository inventoryRepository;
-        private readonly IEmployeeRepository employeeRepository;
-        private readonly IProductRepository productRepository;
-        private readonly IMapper mapper;
+        private readonly IInventoryRepository _inventoryRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IProductRepository _productRepository;
+        private readonly IMapper _mapper;
+        private readonly IMemoryCache _cache;
 
-        public InventoryController(IInventoryRepository inventoryRepository, IEmployeeRepository employeeRepository, IProductRepository productRepository, IMapper mapper)
+        private const string CacheKey = "Inventories_List";
+
+        public InventoryController(IInventoryRepository inventoryRepository, IEmployeeRepository employeeRepository, IProductRepository productRepository, IMapper mapper, IMemoryCache cache)
         {
-            this.inventoryRepository = inventoryRepository;
-            this.employeeRepository = employeeRepository;
-            this.productRepository = productRepository;
-            this.mapper = mapper;
+            _inventoryRepository = inventoryRepository;
+            _employeeRepository = employeeRepository;
+            _productRepository = productRepository;
+            _mapper = mapper;
+            _cache = cache;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetInventories(CancellationToken cancellationToken)
         {
-            var inventories = await inventoryRepository.GetAllAsync(cancellationToken);
-            if (inventories.IsNullOrEmpty())
+            if (!_cache.TryGetValue(CacheKey, out List<InventoryResponseDto> cachedInventories))
             {
-                return NotFound("Hiç inventory yok");
+                var inventories = await _inventoryRepository.GetAllAsync(cancellationToken);
+                if (inventories.IsNullOrEmpty())
+                {
+                    return NotFound("Hiç inventory yok");
+                }
+
+                cachedInventories = _mapper.Map<List<InventoryResponseDto>>(inventories);
+
+                _cache.Set(CacheKey, cachedInventories, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
             }
 
-            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
-            return Ok(result);
+            return Ok(cachedInventories);
         }
 
         [HttpGet("product/{productId:int}")]
         public async Task<IActionResult> GetInventoryByProductId(int productId, CancellationToken cancellationToken)
         {
-            var inventories = await inventoryRepository.GetByProductIdAsync(productId, cancellationToken);
+            var inventories = await _inventoryRepository.GetByProductIdAsync(productId, cancellationToken);
 
             if (inventories.IsNullOrEmpty())
             {
                 return NotFound($"{productId} numaralı ProductId ile ilişkili envanter kaydı bulunamadı.");
             }
 
-            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
+            var result = _mapper.Map<List<InventoryResponseDto>>(inventories);
 
             return Ok(result);
         }
@@ -58,28 +72,46 @@ namespace InventoryApp.Controllers
         [HttpGet("deliveredDateGet")]
         public async Task<IActionResult> GetInventoryByDeliveredDate([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, CancellationToken cancellationToken)
         {
-            if (startDate > endDate)
+            if (!_cache.TryGetValue(CacheKey, out List<InventoryResponseDto> cachedInventoriesByDate))
             {
-                return BadRequest("Başlangıç tarihi bitiş tarihinden büyük olamaz.");
+                if (startDate > endDate)
+                {
+                    return BadRequest("Başlangıç tarihi bitiş tarihinden büyük olamaz.");
+                }
+
+                var inventories = await _inventoryRepository.GetByDeliveredDateAsync(startDate, endDate, cancellationToken);
+                if (inventories.IsNullOrEmpty())
+                {
+                    return NotFound($"Girdiğiniz {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
+                }
+
+                cachedInventoriesByDate = _mapper.Map<List<InventoryResponseDto>>(inventories);
+
+                _cache.Set(CacheKey, cachedInventoriesByDate, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
             }
 
-            var inventories = await inventoryRepository.GetByDeliveredDateAsync(startDate, endDate, cancellationToken);
-            if (inventories.IsNullOrEmpty())
-            {
-                return NotFound($"Girdiğiniz {startDate:yyyy-MM-dd} ve {endDate:yyyy-MM-dd} tarihleri arasında ürün bulunamadı.");
-            }
-
-            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
-            return Ok(result);
+            return Ok(cachedInventoriesByDate);
         }
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAllInventories(CancellationToken cancellationToken)
         {
-            var inventories = await inventoryRepository.GetAllIncludingDeletedAsync(cancellationToken);
+            if (!_cache.TryGetValue(CacheKey, out List<InventoryResponseDto> cachedAllEmployees))
+            {
+                var inventories = await _inventoryRepository.GetAllIncludingDeletedAsync(cancellationToken);
 
-            var result = mapper.Map<List<InventoryResponseDto>>(inventories);
-            return Ok(result);
+                cachedAllEmployees = _mapper.Map<List<InventoryResponseDto>>(inventories);
+
+                _cache.Set(CacheKey, cachedAllEmployees, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+            }
+
+            return Ok(cachedAllEmployees);
         }
 
         [HttpPost]
@@ -87,9 +119,9 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInventory([FromBody] InventoryRequestDto inventoryRequestDto, CancellationToken cancellationToken)
         {
-            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId, cancellationToken);
-            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId, cancellationToken);
-            var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId, cancellationToken);
+            var givenByEmployee = await _employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId, cancellationToken);
+            var receivedByEmployee = await _employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId, cancellationToken);
+            var product = await _productRepository.GetByIdAsync(inventoryRequestDto.ProductId, cancellationToken);
             
             if (givenByEmployee == null)
                 return NotFound("GivenByEmployeeId için geçerli bir Employee bulunamadı.");
@@ -98,19 +130,21 @@ namespace InventoryApp.Controllers
             if (product == null)
                 return NotFound("ProductId için geçerli bir Product bulunamadı.");
             
-            var existingInventory = await inventoryRepository.GetByProductIdWithIsTakenAsync(inventoryRequestDto.ProductId, cancellationToken);
+            var existingInventory = await _inventoryRepository.GetByProductIdWithIsTakenAsync(inventoryRequestDto.ProductId, cancellationToken);
             if (existingInventory != null && existingInventory.IsTaken)
             {
                 return BadRequest("Bu ürün şu anda başka bir kişi tarafından alındı ve henüz iade edilmedi.");
             }
 
-            var inventory = mapper.Map<Inventory>(inventoryRequestDto);
+            var inventory = _mapper.Map<Inventory>(inventoryRequestDto);
 
             inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
 
-            await inventoryRepository.CreateAsync(inventory, cancellationToken);
-            var result = mapper.Map<InventoryResponseDto>(inventory);
+            await _inventoryRepository.CreateAsync(inventory, cancellationToken);
 
+            _cache.Remove(CacheKey);
+
+            var result = _mapper.Map<InventoryResponseDto>(inventory);
             return Created("", result);
         }
 
@@ -119,13 +153,13 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInventory(int id, [FromBody] InventoryRequestDto inventoryRequestDto, CancellationToken cancellationToken)
         {
-            var inventory = await inventoryRepository.GetByIdAsync(id, cancellationToken);
+            var inventory = await _inventoryRepository.GetByIdAsync(id, cancellationToken);
             if (inventory == null)
                 return NotFound($"{id} numaralı Id ile eşleşen bir Inventory bulunamadı.");
 
-            var givenByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId, cancellationToken);
-            var receivedByEmployee = await employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId, cancellationToken);
-            var product = await productRepository.GetByIdAsync(inventoryRequestDto.ProductId, cancellationToken);
+            var givenByEmployee = await _employeeRepository.GetByIdAsync(inventoryRequestDto.GivenByEmployeeId, cancellationToken);
+            var receivedByEmployee = await _employeeRepository.GetByIdAsync(inventoryRequestDto.ReceivedByEmployeeId, cancellationToken);
+            var product = await _productRepository.GetByIdAsync(inventoryRequestDto.ProductId, cancellationToken);
 
             if (givenByEmployee == null)
                 return NotFound("GivenByEmployeeId için geçerli bir Employee bulunamadı.");
@@ -134,11 +168,13 @@ namespace InventoryApp.Controllers
             if (product == null)
                 return NotFound("ProductId için geçerli bir Product bulunamadı.");
 
-            mapper.Map(inventoryRequestDto, inventory);
+            _mapper.Map(inventoryRequestDto, inventory);
 
             inventory.IsTaken = inventory.DeliveredDate.HasValue && !inventory.ReturnDate.HasValue;
 
-            await inventoryRepository.UpdateAsync(inventory, cancellationToken);
+            await _inventoryRepository.UpdateAsync(inventory, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return Ok($"{id} numaralı Id ile eşleşen Inventory güncellendi.");
         }
@@ -146,13 +182,15 @@ namespace InventoryApp.Controllers
         [HttpPut("{id}/updateReturnDate")]
         public async Task<IActionResult> UpdateReturnDate(int id, [FromBody] DateTime? returnDate, CancellationToken cancellationToken)
         {
-            var existingInventory = await inventoryRepository.GetByIdAsync(id, cancellationToken);
+            var existingInventory = await _inventoryRepository.GetByIdAsync(id, cancellationToken);
             if (existingInventory == null)
             {
                 return NotFound($"{id} numaralı Id ile eşleşen bir envanter kaydı bulunamadı.");
             }
 
-            await inventoryRepository.UpdateReturnDateAsync(id, returnDate, cancellationToken);
+            await _inventoryRepository.UpdateReturnDateAsync(id, returnDate, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return NoContent();
         }
@@ -160,11 +198,13 @@ namespace InventoryApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInventory(int id, CancellationToken cancellationToken)
         {
-            var inventory = await inventoryRepository.GetByIdAsync(id, cancellationToken);
+            var inventory = await _inventoryRepository.GetByIdAsync(id, cancellationToken);
             if (inventory == null)
                 return NotFound($"Id = {id} bulunamadı.");
 
-            await inventoryRepository.SoftDeleteAsync(inventory, cancellationToken);
+            await _inventoryRepository.SoftDeleteAsync(inventory, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return Ok($"{id} numaralı Inventory başarıyla kaldırıldı.");
         }

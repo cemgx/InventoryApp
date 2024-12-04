@@ -109,32 +109,6 @@ builder.Services.AddAntiforgery(options =>
 
 
 builder.Services.AddSwaggerGen();
-//options =>
-//{
-//    options.OperationFilter<AntiforgeryHeaderOperationFilter>();
-//    options.AddSecurityDefinition("csrf", new OpenApiSecurityScheme()
-//    {
-//        Type = SecuritySchemeType.ApiKey,
-//        Scheme = "csrf",
-//        In = ParameterLocation.Header,
-//        Name = "XSRF-TOKEN",
-//        Description = "CSRF token header"
-//    });
-//    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-//    {
-//        {
-//            new OpenApiSecurityScheme
-//            {
-//                Reference = new OpenApiReference
-//                {
-//                    Type = ReferenceType.SecurityScheme,
-//                    Id = "csrf"
-//                }
-//            },
-//            new string[] {}
-//        }
-//    });
-//});
 
 builder.Services.AddCors(options =>
 {

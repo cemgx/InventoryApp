@@ -3,19 +3,21 @@ using InventoryApp.Application.Interfaces;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace InventoryApp.Repositories
 {
     public class ProductTypeRepository : Repository<ProductType>, IProductTypeRepository
     {
-        public ProductTypeRepository(InventoryAppDbContext context, IMemoryCache cache) : base(context, cache)
+        private readonly InventoryAppDbContext _context;
+
+        public ProductTypeRepository(InventoryAppDbContext context) : base(context)
         {
+            _context = context;
         }
 
         public async Task<List<ProductType>> GetByProductTypeIdAsync(int productTypeId, CancellationToken cancellationToken)
         {
-            return await this.context.Set<ProductType>()
+            return await _context.Set<ProductType>()
                 .AsNoTracking()
                 .FilterById(i => i.Id, productTypeId)
                 .ToListAsync(cancellationToken);

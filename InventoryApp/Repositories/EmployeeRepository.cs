@@ -1,14 +1,10 @@
-﻿using FluentValidation;
-using InventoryApp.Application.Extensions;
+﻿using InventoryApp.Application.Extensions;
 using InventoryApp.Application.Interfaces;
 using InventoryApp.Application.LogEntities;
 using InventoryApp.Models.Context;
 using InventoryApp.Models.Entity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Compliance.Redaction;
-using System;
-using System.Reflection.Metadata.Ecma335;
 
 namespace InventoryApp.Repositories
 {
@@ -17,8 +13,8 @@ namespace InventoryApp.Repositories
         private readonly ILogger<EmployeeRepository> _logger;
         private readonly Redactor _redactor;
         private readonly InventoryAppDbContext _context;
-        public EmployeeRepository(ILogger<EmployeeRepository> logger, Redactor redactor, InventoryAppDbContext context, IMemoryCache cache)
-            : base(context, cache)
+        public EmployeeRepository(ILogger<EmployeeRepository> logger, Redactor redactor, InventoryAppDbContext context)
+            : base(context)
         {
             _logger = logger;
             _redactor = redactor;
@@ -27,7 +23,7 @@ namespace InventoryApp.Repositories
 
         public async Task<List<Employee>> GetByEmployeeIdAsync(int employeeId, CancellationToken cancellationToken)
         {
-            return await context.Set<Employee>()
+            return await _context.Set<Employee>()
                 .AsNoTracking()
                 .FilterById(e => e.Id, employeeId)
                 .ToListAsync(cancellationToken);
@@ -35,7 +31,7 @@ namespace InventoryApp.Repositories
 
         public async Task<Employee> GetByMailAsync(string mail, CancellationToken cancellationToken)
         {
-            return await context.Employees
+            return await _context.Employees
                 .AsNoTracking()
                 .SingleOrDefaultAsync(x => x.Email == mail, cancellationToken);
         }

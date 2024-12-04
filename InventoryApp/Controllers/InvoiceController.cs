@@ -5,6 +5,7 @@ using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
@@ -14,57 +15,81 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class InvoiceController : ControllerBase
     {
-        private readonly IInvoiceRepository repository;
-        private readonly IProductRepository productRepository;
-        private readonly IMapper mapper;
+        private readonly IInvoiceRepository _repository;
+        private readonly IProductRepository _productRepository;
+        private readonly IMapper _mapper;
+        private readonly IMemoryCache _cache;
 
-        public InvoiceController(IInvoiceRepository repository, IMapper mapper, IProductRepository productRepository)
+        private const string CacheKey = "Employees_List";
+
+        public InvoiceController(IInvoiceRepository repository, IMapper mapper, IProductRepository productRepository, IMemoryCache cache)
         {
-            this.repository = repository;
-            this.mapper = mapper;
-            this.productRepository = productRepository;
+            _repository = repository;
+            _mapper = mapper;
+            _productRepository = productRepository;
+            _cache = cache;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetInvoices(CancellationToken cancellationToken)
         {
-            var invoices = await repository.GetAllAsync(cancellationToken);
+            if (!_cache.TryGetValue(CacheKey, out List<InvoiceResponseDto> cachedInvoices))
+            {
+                var invoices = await _repository.GetAllAsync(cancellationToken);
+                if (invoices.IsNullOrEmpty())
+                {
+                    return NotFound("Hiç invoice yok");
+                }
 
-            var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
-            return Ok(result);
+                cachedInvoices = _mapper.Map<List<InvoiceResponseDto>>(invoices);
+
+                _cache.Set(CacheKey, cachedInvoices, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+            }
+            return Ok(cachedInvoices);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInvoice(int id, CancellationToken cancellationToken)
         {
-            var invoice = await repository.GetByInvoiceIdAsync(id, cancellationToken);
+            var invoice = await _repository.GetByInvoiceIdAsync(id, cancellationToken);
             if (invoice.IsNullOrEmpty())
             {
                 return NotFound();
             }
 
-            var result = mapper.Map<List<InvoiceResponseDto>>(invoice);
+            var result = _mapper.Map<List<InvoiceResponseDto>>(invoice);
             return Ok(result);
         }
 
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name, CancellationToken cancellationToken)
         {
-            var invoices = await repository.GetByFirmNameAsync(name, cancellationToken);
-            if (invoices.IsNullOrEmpty())
+            if (!_cache.TryGetValue(CacheKey, out List<InvoiceResponseDto> cachedInvoicesByFirm))
             {
-                return NotFound($"{name} ismine sahip firma bulunamadı.");
+                var invoices = await _repository.GetByFirmNameAsync(name, cancellationToken);
+                if (invoices.IsNullOrEmpty())
+                {
+                    return NotFound($"{name} ismine sahip firma bulunamadı.");
+                }
+
+                cachedInvoicesByFirm = _mapper.Map<List<InvoiceResponseDto>>(invoices);
+
+                _cache.Set(CacheKey, cachedInvoicesByFirm, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
             }
 
-            var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
-
-            return Ok(result);
+            return Ok(cachedInvoicesByFirm);
         }
 
         [HttpGet("{invoiceId}/products")]
         public async Task<IActionResult> GetProductsByInvoiceId(int invoiceId, CancellationToken cancellationToken)
         {
-            var productIds = await productRepository.GetProductIdsByInvoiceIdAsync(invoiceId, cancellationToken);
+            var productIds = await _productRepository.GetProductIdsByInvoiceIdAsync(invoiceId, cancellationToken);
 
             if (productIds.IsNullOrEmpty())
             {
@@ -77,10 +102,19 @@ namespace InventoryApp.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllInvoices(CancellationToken cancellationToken)
         {
-            var invoices = await repository.GetAllIncludingDeletedAsync(cancellationToken);
+            if (!_cache.TryGetValue(CacheKey, out List<InvoiceResponseDto> cachedAllInvoices))
+            {
+                var invoices = await _repository.GetAllIncludingDeletedAsync(cancellationToken);
 
-            var result = mapper.Map<List<InvoiceResponseDto>>(invoices);
-            return Ok(result);
+                cachedAllInvoices = _mapper.Map<List<InvoiceResponseDto>>(invoices);
+
+                _cache.Set(CacheKey, cachedAllInvoices, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+            }
+
+            return Ok(cachedAllInvoices);
         }
 
 
@@ -89,11 +123,13 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateInvoice([FromBody] InvoiceRequestDto invoiceRequestDto, CancellationToken cancellationToken)
         {
-            var invoice = mapper.Map<Invoice>(invoiceRequestDto);
+            var invoice = _mapper.Map<Invoice>(invoiceRequestDto);
 
-            await repository.CreateAsync(invoice, cancellationToken);
+            await _repository.CreateAsync(invoice, cancellationToken);
 
-            var result = mapper.Map<InvoiceResponseDto>(invoice);
+            _cache.Remove(CacheKey);
+
+            var result = _mapper.Map<InvoiceResponseDto>(invoice);
             return Created("", result);
         }
 
@@ -102,13 +138,15 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateInvoice(int id, [FromBody] InvoiceRequestDto invoiceRequestDto, CancellationToken cancellationToken)
         {
-            var invoice = await repository.GetByIdAsync(id, cancellationToken);
+            var invoice = await _repository.GetByIdAsync(id, cancellationToken);
             if (invoice == null)
                 return NotFound($"{id} numaralı Invoice bulunamadı.");
 
-            mapper.Map(invoiceRequestDto, invoice);
+            _mapper.Map(invoiceRequestDto, invoice);
 
-            await repository.UpdateAsync(invoice, cancellationToken);
+            await _repository.UpdateAsync(invoice, cancellationToken);,
+
+            _cache.Remove(CacheKey);
 
             return NoContent();
         }
@@ -116,11 +154,13 @@ namespace InventoryApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInvoice(int id, CancellationToken cancellationToken)
         {
-            var invoice = await repository.GetByIdAsync(id, cancellationToken);
+            var invoice = await _repository.GetByIdAsync(id, cancellationToken);
             if (invoice == null)
                 return NotFound();
 
-            await repository.SoftDeleteAsync(invoice, cancellationToken);
+            await _repository.SoftDeleteAsync(invoice, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return Ok($"{id} numaralı Invoice başarıyla kaldırıldı.");
         }

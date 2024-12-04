@@ -5,6 +5,7 @@ using InventoryApp.Application.Interfaces;
 using InventoryApp.Application.LogEntities;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.IdentityModel.Tokens;
 
@@ -14,71 +15,92 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly IEmployeeRepository repository;
-        private readonly IMapper mapper;
+        private readonly IEmployeeRepository _repository;
+        private readonly IMapper _mapper;
         private readonly ILogger<EmployeeController> _logger;
         private readonly Redactor _redactor;
+        private readonly IMemoryCache _cache;
 
-        public EmployeeController(IEmployeeRepository repository, IMapper mapper, ILogger<EmployeeController> logger, Redactor redactor)
+        private const string CacheKey = "Employees_List";
+
+        public EmployeeController(IEmployeeRepository repository, IMapper mapper, ILogger<EmployeeController> logger, Redactor redactor, IMemoryCache cache)
         {
-            this.repository = repository;
-            this.mapper = mapper;
+            _repository = repository;
+            _mapper = mapper;
             _logger = logger;
             _redactor = redactor;
+            _cache = cache;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetEmployees(CancellationToken cancellationToken)
         {
-            var employees = await repository.GetAllAsync(cancellationToken);
-            if (employees.IsNullOrEmpty())
+            if (!_cache.TryGetValue(CacheKey, out List<EmployeeResponseDto> cachedEmployees))
             {
-                return NotFound("Hiç employee yok");
+                var employees = await _repository.GetAllAsync(cancellationToken);
+                if (employees.IsNullOrEmpty())
+                {
+                    return NotFound("Hiç employee yok");
+                }
+
+                var orderedEmployees = employees.OrderBy(x => x.Name);
+                cachedEmployees = _mapper.Map<List<EmployeeResponseDto>>(orderedEmployees);
+
+                _cache.Set(CacheKey, cachedEmployees, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
             }
 
-            var orderByEmployees = employees.OrderBy(x => x.Name);
-            var result = mapper.Map<List<EmployeeResponseDto>>(orderByEmployees);
-            return Ok(result);
+            return Ok(cachedEmployees);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEmployee(int id, CancellationToken cancellationToken)
         {
-            var employee = await repository.GetByEmployeeIdAsync(id, cancellationToken);
+            var employee = await _repository.GetByEmployeeIdAsync(id, cancellationToken);
             if (employee.IsNullOrEmpty())
             {
                 return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
-            var result = mapper.Map<List<EmployeeResponseDto>>(employee);
+            var result = _mapper.Map<List<EmployeeResponseDto>>(employee);
             return Ok(result);
         }
 
         [HttpGet("search")]
         public async Task<IActionResult> GetEmployeesByName([FromQuery] string name, CancellationToken cancellationToken)
         {
-            var employees = await repository.GetByNameAsync(name, cancellationToken);
+            var employees = await _repository.GetByNameAsync(name, cancellationToken);
             if (employees.IsNullOrEmpty())
             {
                 return NotFound("Bu isme sahip Employee yok.");
             }
 
-            var result = mapper.Map<List<EmployeeResponseDto>>(employees);
+            var result = _mapper.Map<List<EmployeeResponseDto>>(employees);
             return Ok(result);
         }
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAllEmployees(CancellationToken cancellationToken)
         {
-            var employees = await repository.GetAllIncludingDeletedAsync(cancellationToken);
-            if (employees.IsNullOrEmpty())
+            if (!_cache.TryGetValue(CacheKey, out List<EmployeeResponseDto> cachedAllEmployees))
             {
-                return NotFound();
+                var employees = await _repository.GetAllIncludingDeletedAsync(cancellationToken);
+                if (employees.IsNullOrEmpty())
+                {
+                    return NotFound();
+                }
+
+                var orderByEmployees = employees.OrderBy(x => x.Name);
+                cachedAllEmployees = _mapper.Map<List<EmployeeResponseDto>>(orderByEmployees);
+                _cache.Set(CacheKey, cachedAllEmployees, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
             }
 
-            var orderByEmployees = employees.OrderBy(x => x.Name);
-            var result = mapper.Map<List<EmployeeResponseDto>>(orderByEmployees);
-            return Ok(result);
+            return Ok(cachedAllEmployees);
         }
 
         [HttpPost]
@@ -86,21 +108,23 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateEmployee([FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
         {
-            var existingEmployee = await repository.GetByMailAsync(employeeRequestDto.Email, cancellationToken);
+            var existingEmployee = await _repository.GetByMailAsync(employeeRequestDto.Email, cancellationToken);
             if (existingEmployee != null)
                 return NotFound("Bu maille zaten bir kullanıcı mevcut.");
 
             var passwordHasher = new PasswordHasher();
             var (hashedPassword, salt) = passwordHasher.HashPassword(employeeRequestDto.Password);
 
-            var employee = mapper.Map<Employee>(employeeRequestDto);
+            var employee = _mapper.Map<Employee>(employeeRequestDto);
             employee.Password = hashedPassword;
             employee.Salt = salt;
 
-            var randomCode = repository.GenerateRandomString(6);
+            var randomCode = _repository.GenerateRandomString(6);
             employee.MailVerificationCode = randomCode;
 
-            await repository.CreateAsync(employee, cancellationToken);
+            await _repository.CreateAsync(employee, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             var employeeLog = new EmployeeLog
             {
@@ -109,11 +133,11 @@ namespace InventoryApp.Controllers
                 Password = _redactor.Redact(employeeRequestDto.Password)
             };
 
-            await repository.LogEmployeeData(employeeLog, cancellationToken);
+            await _repository.LogEmployeeData(employeeLog, cancellationToken);
 
-            _logger.LogError(employeeLog.Name);
+            //_logger.LogError(employeeLog.Name);
 
-            var result = mapper.Map<EmployeeResponseDto>(employee);
+            var result = _mapper.Map<EmployeeResponseDto>(employee);
             return Created("", $"Hesabınız başarıyla oluşturuldu. Giriş yapabilmek için mailinizi {randomCode} ile onaylamanız gerekmektedir.");
         }
 
@@ -122,7 +146,7 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeRequestDto employeeRequestDto, CancellationToken cancellationToken)
         {
-            var existingEmployee = await repository.GetByIdAsync(id, cancellationToken);
+            var existingEmployee = await _repository.GetByIdAsync(id, cancellationToken);
             if (existingEmployee == null)
             {
                 return NotFound();
@@ -131,11 +155,13 @@ namespace InventoryApp.Controllers
             var passwordHasher = new PasswordHasher();
             var (hashedPassword, salt) = passwordHasher.HashPassword(employeeRequestDto.Password);
 
-            mapper.Map(employeeRequestDto, existingEmployee);
+            _mapper.Map(employeeRequestDto, existingEmployee);
             existingEmployee.Password = hashedPassword;
             existingEmployee.Salt = salt;
 
-            await repository.UpdateAsync(existingEmployee, cancellationToken);
+            await _repository.UpdateAsync(existingEmployee, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return NoContent();
         }
@@ -143,13 +169,15 @@ namespace InventoryApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmployee(int id, CancellationToken cancellationToken)
         {
-            var employee = await repository.GetByIdAsync(id, cancellationToken);
+            var employee = await _repository.GetByIdAsync(id, cancellationToken);
             if (employee == null)
             {
                 return NotFound($"{id} numaralı id ile bir employee bulunamadı.");
             }
 
-            await repository.SoftDeleteAsync(employee, cancellationToken);
+            await _repository.SoftDeleteAsync(employee, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return Ok($"{id} numaralı Employee başarıyla kaldırıldı.");
         }

@@ -5,6 +5,7 @@ using InventoryApp.Application.Utility;
 using InventoryApp.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryApp.Controllers
@@ -14,59 +15,82 @@ namespace InventoryApp.Controllers
     [ApiController]
     public class ProductTypeController : ControllerBase
     {
-        private readonly IProductTypeRepository repository;
-        private readonly IMapper mapper;
-        public ProductTypeController(IProductTypeRepository repository, IMapper mapper)
+        private readonly IProductTypeRepository _repository;
+        private readonly IMapper _mapper;
+        private readonly IMemoryCache _cache;
+
+        private const string CacheKey = "Inventories_List";
+
+        public ProductTypeController(IProductTypeRepository repository, IMapper mapper, IMemoryCache cache)
         {
-            this.repository = repository;
-            this.mapper = mapper;
+            _repository = repository;
+            _mapper = mapper;
+            _cache = cache;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetProductTypes(CancellationToken cancellationToken)
         {
-            var types = await repository.GetAllAsync(cancellationToken);
-            if (types.IsNullOrEmpty())
-                return NotFound();
+            if (!_cache.TryGetValue(CacheKey, out List<ProductTypeResponseDto> cachedProductTypes))
+            {
+                var types = await _repository.GetAllAsync(cancellationToken);
+                if (types.IsNullOrEmpty())
+                    return NotFound();
 
-            var orderByProductType = types.OrderBy(x => x.Name);
-            var result = mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
-            return Ok(result);
+                var orderByProductType = types.OrderBy(x => x.Name);
+                cachedProductTypes = _mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
+
+                _cache.Set(CacheKey, cachedProductTypes, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+            }
+
+            return Ok(cachedProductTypes);
         }
 
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductType(int id, CancellationToken cancellationToken)
         {
-            var productType = await repository.GetByProductTypeIdAsync(id, cancellationToken);
+            var productType = await _repository.GetByProductTypeIdAsync(id, cancellationToken);
             if (productType.IsNullOrEmpty())
                 return NotFound();
 
-            var result = mapper.Map<List<ProductTypeResponseDto>>(productType);
+            var result = _mapper.Map<List<ProductTypeResponseDto>>(productType);
             return Ok(result);
         }
 
         [HttpGet("search")]
         public async Task<IActionResult> GetProductTypesByName([FromQuery] string name, CancellationToken cancellationToken)
         {
-            var productType = await repository.GetByNameAsync(name, cancellationToken);
+            var productType = await _repository.GetByNameAsync(name, cancellationToken);
             if (productType.IsNullOrEmpty())
                 return NotFound("Bu isme sahip Product Type yok.");
 
-            var result = mapper.Map<List<ProductTypeResponseDto>>(productType);
+            var result = _mapper.Map<List<ProductTypeResponseDto>>(productType);
             return Ok(result);
         }
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAllProductTypes(CancellationToken cancellationToken)
         {
-            var types = await repository.GetAllIncludingDeletedAsync(cancellationToken);
-            if (types.IsNullOrEmpty())
-                return NotFound();
+            if (!_cache.TryGetValue(CacheKey, out List<ProductTypeResponseDto> cachedAllProductTypes))
+            {
+                var types = await _repository.GetAllIncludingDeletedAsync(cancellationToken);
+                if (types.IsNullOrEmpty())
+                    return NotFound();
 
-            var orderByProductType = types.OrderBy(x => x.Name);
-            var result = mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
-            return Ok(result);
+                var orderByProductType = types.OrderBy(x => x.Name);
+                cachedAllProductTypes = _mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
+
+                _cache.Set(CacheKey, cachedAllProductTypes, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                });
+            }
+
+            return Ok(cachedAllProductTypes);
         }
 
         [HttpPost]
@@ -74,10 +98,12 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProductType([FromBody] ProductTypeRequestDto productTypeRequestDto, CancellationToken cancellationToken)
         {
-            var product = mapper.Map<ProductType>(productTypeRequestDto);
-            await repository.CreateAsync(product, cancellationToken);
+            var product = _mapper.Map<ProductType>(productTypeRequestDto);
+            await _repository.CreateAsync(product, cancellationToken);
 
-            var result = mapper.Map<ProductTypeResponseDto>(product);
+            _cache.Remove(CacheKey);
+
+            var result = _mapper.Map<ProductTypeResponseDto>(product);
             return Created("", result);
         }
 
@@ -86,26 +112,30 @@ namespace InventoryApp.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProductType(int id, [FromBody] ProductTypeRequestDto productTypeRequestDto, CancellationToken cancellationToken)
         {
-            var existingProductType = await repository.GetByIdAsync(id, cancellationToken);
+            var existingProductType = await _repository.GetByIdAsync(id, cancellationToken);
             if (existingProductType == null)
                 return NotFound();
 
-            mapper.Map(productTypeRequestDto, existingProductType);
+            _mapper.Map(productTypeRequestDto, existingProductType);
 
-            await repository.UpdateAsync(existingProductType, cancellationToken);
+            await _repository.UpdateAsync(existingProductType, cancellationToken);
 
-            var result = mapper.Map<ProductTypeResponseDto>(existingProductType);
+            _cache.Remove(CacheKey);
+
+            var result = _mapper.Map<ProductTypeResponseDto>(existingProductType);
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProductType(int id, CancellationToken cancellationToken)
         {
-            var productType = await repository.GetByIdAsync(id, cancellationToken);
+            var productType = await _repository.GetByIdAsync(id, cancellationToken);
             if (productType == null)
                 return NotFound($"Id = {id} bulunamadı.");
 
-            await repository.SoftDeleteAsync(productType, cancellationToken);
+            await _repository.SoftDeleteAsync(productType, cancellationToken);
+
+            _cache.Remove(CacheKey);
 
             return Ok($"{id} numaralı ProductType başarıyla kaldırıldı.");
         }
