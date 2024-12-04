@@ -17,14 +17,16 @@
         const data = await response.json();
 
         if (response.ok) {
+            await fetch("https://localhost:44335/api/Auth/get-antiforgery-token", {
+                credentials: "include",
+            });
+
             window.location.href = "https://localhost:44335/frontend/login/employee/index.html";
-        }
-        else {
+        } else {
             document.getElementById("message").textContent = data.message || "mail veya şifre hatalı";
         }
-    }
-    catch (error) {
-        document.getElementById("message").textContent = "Bir hata oluştu.";
-        console.error("Error Response:", error);
+    } catch (error) {
+        document.getElementById("message").textContent = "Bir hata oluştu";
+        console.error("Error:", error);
     }
 });

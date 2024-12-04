@@ -144,7 +144,7 @@ namespace InventoryApp.Controllers
 
             _mapper.Map(invoiceRequestDto, invoice);
 
-            await _repository.UpdateAsync(invoice, cancellationToken);,
+            await _repository.UpdateAsync(invoice, cancellationToken);
 
             _cache.Remove(CacheKey);
 
