@@ -1,5 +1,5 @@
 ﻿const API_URL = "https://localhost:44335/api/Employee";
-const userName = "Test User"; // Örnek kullanıcı adı
+const userName = "username" // Örnek kullanıcı adı
 document.getElementById("userName").textContent = userName;
 
 // Navigation Logic

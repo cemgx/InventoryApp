@@ -22,6 +22,8 @@ namespace InventoryApp.Controllers
         private readonly IMemoryCache _cache;
 
         private const string CacheKey = "Inventories_List";
+        private const string AllInventoriesCacheKey = "Inventories_List_All";
+        private const string DeliveredInventoriesCacheKey = "Inventories_List_Delivered_Date";
 
         public InventoryController(IInventoryRepository inventoryRepository, IEmployeeRepository employeeRepository, IProductRepository productRepository, IMapper mapper, IMemoryCache cache)
         {
@@ -72,7 +74,7 @@ namespace InventoryApp.Controllers
         [HttpGet("deliveredDateGet")]
         public async Task<IActionResult> GetInventoryByDeliveredDate([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<InventoryResponseDto> cachedInventoriesByDate))
+            if (!_cache.TryGetValue(DeliveredInventoriesCacheKey, out List<InventoryResponseDto> cachedInventoriesByDate))
             {
                 if (startDate > endDate)
                 {
@@ -87,7 +89,7 @@ namespace InventoryApp.Controllers
 
                 cachedInventoriesByDate = _mapper.Map<List<InventoryResponseDto>>(inventories);
 
-                _cache.Set(CacheKey, cachedInventoriesByDate, new MemoryCacheEntryOptions
+                _cache.Set(DeliveredInventoriesCacheKey, cachedInventoriesByDate, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -99,13 +101,13 @@ namespace InventoryApp.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllInventories(CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<InventoryResponseDto> cachedAllEmployees))
+            if (!_cache.TryGetValue(AllInventoriesCacheKey, out List<InventoryResponseDto> cachedAllEmployees))
             {
                 var inventories = await _inventoryRepository.GetAllIncludingDeletedAsync(cancellationToken);
 
                 cachedAllEmployees = _mapper.Map<List<InventoryResponseDto>>(inventories);
 
-                _cache.Set(CacheKey, cachedAllEmployees, new MemoryCacheEntryOptions
+                _cache.Set(AllInventoriesCacheKey, cachedAllEmployees, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -143,6 +145,8 @@ namespace InventoryApp.Controllers
             await _inventoryRepository.CreateAsync(inventory, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInventoriesCacheKey);
+            _cache.Remove(DeliveredInventoriesCacheKey);
 
             var result = _mapper.Map<InventoryResponseDto>(inventory);
             return Created("", result);
@@ -175,6 +179,8 @@ namespace InventoryApp.Controllers
             await _inventoryRepository.UpdateAsync(inventory, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInventoriesCacheKey);
+            _cache.Remove(DeliveredInventoriesCacheKey);
 
             return Ok($"{id} numaralı Id ile eşleşen Inventory güncellendi.");
         }
@@ -191,6 +197,8 @@ namespace InventoryApp.Controllers
             await _inventoryRepository.UpdateReturnDateAsync(id, returnDate, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInventoriesCacheKey);
+            _cache.Remove(DeliveredInventoriesCacheKey);
 
             return NoContent();
         }
@@ -205,6 +213,8 @@ namespace InventoryApp.Controllers
             await _inventoryRepository.SoftDeleteAsync(inventory, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInventoriesCacheKey);
+            _cache.Remove(DeliveredInventoriesCacheKey);
 
             return Ok($"{id} numaralı Inventory başarıyla kaldırıldı.");
         }

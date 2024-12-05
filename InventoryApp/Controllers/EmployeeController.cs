@@ -22,6 +22,7 @@ namespace InventoryApp.Controllers
         private readonly IMemoryCache _cache;
 
         private const string CacheKey = "Employees_List";
+        private const string AllEmployeesCacheKey = "Employees_List_All";
 
         public EmployeeController(IEmployeeRepository repository, IMapper mapper, ILogger<EmployeeController> logger, Redactor redactor, IMemoryCache cache)
         {
@@ -84,7 +85,7 @@ namespace InventoryApp.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllEmployees(CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<EmployeeResponseDto> cachedAllEmployees))
+            if (!_cache.TryGetValue(AllEmployeesCacheKey, out List<EmployeeResponseDto> cachedAllEmployees))
             {
                 var employees = await _repository.GetAllIncludingDeletedAsync(cancellationToken);
                 if (employees.IsNullOrEmpty())
@@ -94,7 +95,7 @@ namespace InventoryApp.Controllers
 
                 var orderByEmployees = employees.OrderBy(x => x.Name);
                 cachedAllEmployees = _mapper.Map<List<EmployeeResponseDto>>(orderByEmployees);
-                _cache.Set(CacheKey, cachedAllEmployees, new MemoryCacheEntryOptions
+                _cache.Set(AllEmployeesCacheKey, cachedAllEmployees, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -125,6 +126,7 @@ namespace InventoryApp.Controllers
             await _repository.CreateAsync(employee, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllEmployeesCacheKey);
 
             var employeeLog = new EmployeeLog
             {
@@ -162,6 +164,7 @@ namespace InventoryApp.Controllers
             await _repository.UpdateAsync(existingEmployee, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllEmployeesCacheKey);
 
             return NoContent();
         }
@@ -178,6 +181,7 @@ namespace InventoryApp.Controllers
             await _repository.SoftDeleteAsync(employee, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllEmployeesCacheKey);
 
             return Ok($"{id} numaralı Employee başarıyla kaldırıldı.");
         }

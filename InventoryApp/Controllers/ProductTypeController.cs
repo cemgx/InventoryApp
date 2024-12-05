@@ -19,7 +19,8 @@ namespace InventoryApp.Controllers
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
 
-        private const string CacheKey = "Inventories_List";
+        private const string CacheKey = "ProductTypes_List";
+        private const string AllProductTypesCacheKey = "ProductTypes_List_All";
 
         public ProductTypeController(IProductTypeRepository repository, IMapper mapper, IMemoryCache cache)
         {
@@ -75,7 +76,7 @@ namespace InventoryApp.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllProductTypes(CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<ProductTypeResponseDto> cachedAllProductTypes))
+            if (!_cache.TryGetValue(AllProductTypesCacheKey, out List<ProductTypeResponseDto> cachedAllProductTypes))
             {
                 var types = await _repository.GetAllIncludingDeletedAsync(cancellationToken);
                 if (types.IsNullOrEmpty())
@@ -84,7 +85,7 @@ namespace InventoryApp.Controllers
                 var orderByProductType = types.OrderBy(x => x.Name);
                 cachedAllProductTypes = _mapper.Map<List<ProductTypeResponseDto>>(orderByProductType);
 
-                _cache.Set(CacheKey, cachedAllProductTypes, new MemoryCacheEntryOptions
+                _cache.Set(AllProductTypesCacheKey, cachedAllProductTypes, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -102,6 +103,7 @@ namespace InventoryApp.Controllers
             await _repository.CreateAsync(product, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllProductTypesCacheKey);
 
             var result = _mapper.Map<ProductTypeResponseDto>(product);
             return Created("", result);
@@ -121,6 +123,7 @@ namespace InventoryApp.Controllers
             await _repository.UpdateAsync(existingProductType, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllProductTypesCacheKey);
 
             var result = _mapper.Map<ProductTypeResponseDto>(existingProductType);
             return Ok(result);
@@ -136,6 +139,7 @@ namespace InventoryApp.Controllers
             await _repository.SoftDeleteAsync(productType, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllProductTypesCacheKey);
 
             return Ok($"{id} numaralı ProductType başarıyla kaldırıldı.");
         }

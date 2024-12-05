@@ -20,7 +20,10 @@ namespace InventoryApp.Controllers
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
 
-        private const string CacheKey = "Inventories_List";
+        private const string CacheKey = "Products_List";
+        private const string AllProductsCacheKey = "Products_List_All";
+        private const string ProductsSearchCacheKey = "Products_Search_List";
+        private const string ProductsDateCacheKey = "Products_Date_List";
 
         public ProductController(IProductRepository productRepository, IProductTypeRepository typeRepository, IInvoiceRepository invoiceRepository, IMapper mapper, IMemoryCache cache)
         {
@@ -70,7 +73,7 @@ namespace InventoryApp.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts([FromQuery] string name, CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<ProductResponseDto> cachedProductsByName))
+            if (!_cache.TryGetValue(ProductsSearchCacheKey, out List<ProductResponseDto> cachedProductsByName))
             {
                 var products = await _productRepository.GetByNameAsync(name, cancellationToken);
                 if (products.IsNullOrEmpty())
@@ -80,7 +83,7 @@ namespace InventoryApp.Controllers
 
                 cachedProductsByName = _mapper.Map<List<ProductResponseDto>>(products);
 
-                _cache.Set(CacheKey, cachedProductsByName, new MemoryCacheEntryOptions
+                _cache.Set(ProductsSearchCacheKey, cachedProductsByName, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -92,7 +95,7 @@ namespace InventoryApp.Controllers
         [HttpGet("purchaseDateGet")]
         public async Task<IActionResult> GetProductsByInvoicePurchaseDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<ProductResponseDto> cachedProductsByDate))
+            if (!_cache.TryGetValue(ProductsDateCacheKey, out List<ProductResponseDto> cachedProductsByDate))
             {
                 if (startDate > endDate)
                 {
@@ -107,7 +110,7 @@ namespace InventoryApp.Controllers
 
                 cachedProductsByDate = _mapper.Map<List<ProductResponseDto>>(products);
 
-                _cache.Set(CacheKey, cachedProductsByDate, new MemoryCacheEntryOptions
+                _cache.Set(ProductsDateCacheKey, cachedProductsByDate, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -119,7 +122,7 @@ namespace InventoryApp.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllProducts(CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<ProductResponseDto> cachedAllProducts))
+            if (!_cache.TryGetValue(AllProductsCacheKey, out List<ProductResponseDto> cachedAllProducts))
             {
                 var products = await _productRepository.GetAllIncludingDeletedAsync(cancellationToken);
                 if (products.IsNullOrEmpty())
@@ -130,7 +133,7 @@ namespace InventoryApp.Controllers
                 var orderByProducts = products.OrderBy(x => x.Name);
                 cachedAllProducts = _mapper.Map<List<ProductResponseDto>>(orderByProducts);
 
-                _cache.Set(CacheKey, cachedAllProducts, new MemoryCacheEntryOptions
+                _cache.Set(AllProductsCacheKey, cachedAllProducts, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -157,6 +160,9 @@ namespace InventoryApp.Controllers
             await _productRepository.CreateAsync(product, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(ProductsSearchCacheKey);
+            _cache.Remove(ProductsDateCacheKey);
+            _cache.Remove(AllProductsCacheKey);
 
             var result = _mapper.Map<ProductResponseDto>(product);
             return Created("", result);
@@ -184,6 +190,9 @@ namespace InventoryApp.Controllers
             await _productRepository.UpdateAsync(product, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(ProductsSearchCacheKey);
+            _cache.Remove(ProductsDateCacheKey);
+            _cache.Remove(AllProductsCacheKey);
 
             return Ok($"{id} numaralı Id ile eşleşen Product güncellendi");
         }
@@ -198,6 +207,9 @@ namespace InventoryApp.Controllers
             await _productRepository.SoftDeleteAsync(product, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(ProductsSearchCacheKey);
+            _cache.Remove(ProductsDateCacheKey);
+            _cache.Remove(AllProductsCacheKey);
 
             return Ok($"{id} numaralı Product başarıyla kaldırıldı.");
         }

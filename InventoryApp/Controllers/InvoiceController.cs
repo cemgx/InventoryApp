@@ -20,7 +20,9 @@ namespace InventoryApp.Controllers
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
 
-        private const string CacheKey = "Employees_List";
+        private const string CacheKey = "Invoices_List";
+        private const string AllInvoicesCacheKey = "Invoices_List_All";
+        private const string InvoicesFirmCacheKey = "Invoices_Firm_Name_List";
 
         public InvoiceController(IInvoiceRepository repository, IMapper mapper, IProductRepository productRepository, IMemoryCache cache)
         {
@@ -67,7 +69,7 @@ namespace InventoryApp.Controllers
         [HttpGet("Firma Adı")]
         public async Task<IActionResult> GetInvoicesByFirm([FromQuery] string name, CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<InvoiceResponseDto> cachedInvoicesByFirm))
+            if (!_cache.TryGetValue(InvoicesFirmCacheKey, out List<InvoiceResponseDto> cachedInvoicesByFirm))
             {
                 var invoices = await _repository.GetByFirmNameAsync(name, cancellationToken);
                 if (invoices.IsNullOrEmpty())
@@ -77,7 +79,7 @@ namespace InventoryApp.Controllers
 
                 cachedInvoicesByFirm = _mapper.Map<List<InvoiceResponseDto>>(invoices);
 
-                _cache.Set(CacheKey, cachedInvoicesByFirm, new MemoryCacheEntryOptions
+                _cache.Set(InvoicesFirmCacheKey, cachedInvoicesByFirm, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -102,13 +104,13 @@ namespace InventoryApp.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllInvoices(CancellationToken cancellationToken)
         {
-            if (!_cache.TryGetValue(CacheKey, out List<InvoiceResponseDto> cachedAllInvoices))
+            if (!_cache.TryGetValue(AllInvoicesCacheKey, out List<InvoiceResponseDto> cachedAllInvoices))
             {
                 var invoices = await _repository.GetAllIncludingDeletedAsync(cancellationToken);
 
                 cachedAllInvoices = _mapper.Map<List<InvoiceResponseDto>>(invoices);
 
-                _cache.Set(CacheKey, cachedAllInvoices, new MemoryCacheEntryOptions
+                _cache.Set(AllInvoicesCacheKey, cachedAllInvoices, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 });
@@ -128,6 +130,8 @@ namespace InventoryApp.Controllers
             await _repository.CreateAsync(invoice, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInvoicesCacheKey);
+            _cache.Remove(InvoicesFirmCacheKey);
 
             var result = _mapper.Map<InvoiceResponseDto>(invoice);
             return Created("", result);
@@ -147,6 +151,8 @@ namespace InventoryApp.Controllers
             await _repository.UpdateAsync(invoice, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInvoicesCacheKey);
+            _cache.Remove(InvoicesFirmCacheKey);
 
             return NoContent();
         }
@@ -161,6 +167,8 @@ namespace InventoryApp.Controllers
             await _repository.SoftDeleteAsync(invoice, cancellationToken);
 
             _cache.Remove(CacheKey);
+            _cache.Remove(AllInvoicesCacheKey);
+            _cache.Remove(InvoicesFirmCacheKey);
 
             return Ok($"{id} numaralı Invoice başarıyla kaldırıldı.");
         }
